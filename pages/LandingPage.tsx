@@ -308,21 +308,42 @@ const LandingPage: React.FC = () => {
         });
 
         console.log("📥 API Response received:", response);
+        console.log("📥 Full response object:", JSON.stringify(response, null, 2));
 
         if (response.success) {
           console.log("✅ Login successful!");
+
+          // Extract user_id from various possible locations in response
+          let userId = null;
+
+          // Try multiple possible locations for user_id
+          if (response.user?.user_id) {
+            userId = response.user.user_id;
+          } else if (response.user?.id) {
+            userId = response.user.id;
+          } else if ((response as any).user_id) {
+            userId = (response as any).user_id;
+          } else if ((response as any).id) {
+            userId = (response as any).id;
+          }
+
+          console.log("🔍 Extracted user_id:", userId);
+
+          if (!userId) {
+            console.error("❌ No user_id found in response");
+            console.error("Response structure:", response);
+            setApiError("Login successful but user ID not received. Please contact support.");
+            return;
+          }
+
+          // Store user_id
+          console.log("👤 Storing user_id in localStorage:", userId);
+          localStorage.setItem("user_id", String(userId));
 
           // Store token if provided
           if (response.user?.token) {
             console.log("🔑 Storing auth token in localStorage");
             localStorage.setItem("authToken", response.user.token);
-          }
-
-          // Store user_id if provided
-          if (response.user?.user_id || response.user?.id) {
-            const userId = response.user.user_id || response.user.id;
-            console.log("👤 Storing user_id in localStorage:", userId);
-            localStorage.setItem("user_id", userId);
           }
 
           // Create a snapshot of the user data to be set, preserving existing alerts.
@@ -412,10 +433,19 @@ const LandingPage: React.FC = () => {
     const authToken = localStorage.getItem("authToken");
     const userId = localStorage.getItem("user_id");
 
+    console.log("🔍 Checking existing session:", { authToken: !!authToken, userId });
+
     if (authToken && userId) {
       console.log("🔐 User already logged in, redirecting to dashboard");
       navigate(PagePath.DASHBOARD);
       return;
+    }
+
+    // Clear any stale data if incomplete session exists
+    if (authToken || userId) {
+      console.log("🧹 Clearing incomplete session data");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user_id");
     }
 
     const WOW = (window as any).WOW;
@@ -443,16 +473,29 @@ const LandingPage: React.FC = () => {
               Naarad AI
             </h2>
           </div>
-          <Button
-            onClick={() => {
-              setLoginIntent("login");
-              scrollToLogin();
-            }}
-            variant="outline"
-            className="border-white/40 text-white/90 hover:bg-white/10 hover:border-white/80"
-          >
-            Existing User? Login
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={() => {
+                console.log("🧹 Clearing all localStorage data");
+                localStorage.clear();
+                window.location.reload();
+              }}
+              variant="outline"
+              className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/80 text-xs px-3"
+            >
+              Clear Data
+            </Button>
+            <Button
+              onClick={() => {
+                setLoginIntent("login");
+                scrollToLogin();
+              }}
+              variant="outline"
+              className="border-white/40 text-white/90 hover:bg-white/10 hover:border-white/80"
+            >
+              Login
+            </Button>
+          </div>
         </div>
       </header>
 

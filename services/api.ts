@@ -10,12 +10,14 @@ export interface LoginResponse {
   success: boolean;
   message?: string;
   user?: {
-    id: string;
-    email: string;
-    whatsappNumber: string;
+    id?: string;
+    email?: string;
+    whatsappNumber?: string;
     token?: string;
     user_id?: string;
   };
+  user_id?: string; // Backend might send user_id at root level
+  id?: string; // Or might send id at root level
   error?: string;
 }
 
@@ -85,9 +87,19 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
     }
 
     console.log("✅ Login API call successful");
+    console.log("📦 Returning response:", {
+      success: true,
+      user: result.user,
+      user_id: result.user_id,
+      id: result.id,
+      message: result.message,
+    });
+
     return {
       success: true,
       user: result.user,
+      user_id: result.user_id,
+      id: result.id,
       message: result.message,
     };
   } catch (error) {
