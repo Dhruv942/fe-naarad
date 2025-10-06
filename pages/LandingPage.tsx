@@ -308,7 +308,10 @@ const LandingPage: React.FC = () => {
         });
 
         console.log("📥 API Response received:", response);
-        console.log("📥 Full response object:", JSON.stringify(response, null, 2));
+        console.log(
+          "📥 Full response object:",
+          JSON.stringify(response, null, 2)
+        );
 
         if (response.success) {
           console.log("✅ Login successful!");
@@ -332,7 +335,9 @@ const LandingPage: React.FC = () => {
           if (!userId) {
             console.error("❌ No user_id found in response");
             console.error("Response structure:", response);
-            setApiError("Login successful but user ID not received. Please contact support.");
+            setApiError(
+              "Login successful but user ID not received. Please contact support."
+            );
             return;
           }
 
@@ -429,25 +434,7 @@ const LandingPage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Check if user is already logged in
-    const authToken = localStorage.getItem("authToken");
-    const userId = localStorage.getItem("user_id");
-
-    console.log("🔍 Checking existing session:", { authToken: !!authToken, userId });
-
-    if (authToken && userId) {
-      console.log("🔐 User already logged in, redirecting to dashboard");
-      navigate(PagePath.DASHBOARD);
-      return;
-    }
-
-    // Clear any stale data if incomplete session exists
-    if (authToken || userId) {
-      console.log("🧹 Clearing incomplete session data");
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("user_id");
-    }
-
+    // Initialize WOW.js for animations
     const WOW = (window as any).WOW;
     if (WOW) {
       new WOW({
@@ -458,7 +445,7 @@ const LandingPage: React.FC = () => {
         mobile: true,
       }).init();
     }
-  }, [navigate]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-secondary-dark to-gray-900 text-white page-fade-enter overflow-x-hidden">
@@ -474,17 +461,6 @@ const LandingPage: React.FC = () => {
             </h2>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => {
-                console.log("🧹 Clearing all localStorage data");
-                localStorage.clear();
-                window.location.reload();
-              }}
-              variant="outline"
-              className="border-red-500/40 text-red-400 hover:bg-red-500/10 hover:border-red-500/80 text-xs px-3"
-            >
-              Clear Data
-            </Button>
             <Button
               onClick={() => {
                 setLoginIntent("login");
