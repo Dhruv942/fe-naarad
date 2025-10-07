@@ -63,7 +63,7 @@ export const initialAlertData: Omit<Alert, 'id' | 'name'> = {
   news: { selectedTags: [], followUpAnswers: {}, instructionTags: [], aiFollowUpQuestions: [], aiQuestionsAttempted: false },
   youtube: { selectedTags: [], followUpAnswers: {}, instructionTags: [], aiFollowUpQuestions: [], aiQuestionsAttempted: false },
   customInterestTags: [],
-  frequency: UpdateFrequency.MORNING_DIGEST,
+  frequency: UpdateFrequency.REAL_TIME,
   isActive: true,
   tuningFeedback: { liked: [], disliked: [] },
 };

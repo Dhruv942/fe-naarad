@@ -19,13 +19,12 @@ const FrequencySettingsPage: React.FC = () => {
     if (!activeAlert) {
       navigate(PagePath.DASHBOARD);
     } else if (!activeAlert.frequency) {
-      // Set default to REAL_TIME
-      handleUpdateAlert((prev) => ({
-        ...prev,
-        frequency: UpdateFrequency.REAL_TIME,
-      }));
+      // Set default to REAL_TIME immediately
+      setActiveAlert((prev) =>
+        prev ? { ...prev, frequency: UpdateFrequency.REAL_TIME } : null
+      );
     }
-  }, [activeAlert, navigate]);
+  }, [activeAlert, navigate, setActiveAlert]);
 
   if (!activeAlert) {
     return <Navigate to={PagePath.DASHBOARD} replace />;
@@ -87,7 +86,7 @@ const FrequencySettingsPage: React.FC = () => {
                   const isDisabled = freq !== UpdateFrequency.REAL_TIME;
 
                   return (
-                    <div key={freq} className="relative">
+                    <div key={freq} className="relative h-full">
                       <TagButton
                         label={freq}
                         isSelected={activeAlert.frequency === freq}
@@ -97,13 +96,13 @@ const FrequencySettingsPage: React.FC = () => {
                         textColor="text-gray-100"
                         selectedColor="bg-primary ring-2 ring-primary-dark shadow-lg"
                         selectedTextColor="text-white"
-                        className={`!rounded-lg w-full justify-center !py-3 ${
+                        className={`!rounded-lg w-full h-full justify-center !py-3 !px-2 sm:!px-4 whitespace-nowrap text-xs sm:text-sm ${
                           isDisabled ? "opacity-50 cursor-not-allowed" : ""
                         }`}
                       />
                       {isDisabled && (
                         <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-xs text-yellow-300">
+                          <span className="text-xs text-yellow-300 whitespace-nowrap">
                             Coming Soon
                           </span>
                         </div>

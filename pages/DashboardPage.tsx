@@ -15,6 +15,12 @@ const getTagTextColor = (backgroundColor: string): string => {
   return "text-primary-darker";
 };
 
+const formatTagLabel = (tag: string): string => {
+  // Split by underscore and take only the first part, then capitalize
+  const firstPart = tag.split("_")[0];
+  return firstPart.charAt(0).toUpperCase() + firstPart.slice(1);
+};
+
 const DisplayDetailTag: React.FC<{
   label: string;
   icon?: React.ReactNode;
@@ -57,7 +63,9 @@ const DashboardPage: React.FC = () => {
         setAlertsError(response.error || "Failed to fetch alerts");
       }
     } catch (error) {
-      setAlertsError(error instanceof Error ? error.message : "An error occurred");
+      setAlertsError(
+        error instanceof Error ? error.message : "An error occurred"
+      );
     } finally {
       setIsLoadingAlerts(false);
     }
@@ -133,7 +141,9 @@ const DashboardPage: React.FC = () => {
           {/* Loading State */}
           {isLoadingAlerts && (
             <SectionCard className="text-center py-8">
-              <p className="text-sm sm:text-base text-gray-600">Loading your alerts...</p>
+              <p className="text-sm sm:text-base text-gray-600">
+                Loading your alerts...
+              </p>
             </SectionCard>
           )}
 
@@ -175,8 +185,12 @@ const DashboardPage: React.FC = () => {
                   </div>
                   <div className="space-y-3 sm:space-y-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <strong className="font-medium text-gray-500 text-xs sm:text-sm">Status:</strong>
-                      <span className="font-semibold text-green-700 text-sm sm:text-base">Active</span>
+                      <strong className="font-medium text-gray-500 text-xs sm:text-sm">
+                        Status:
+                      </strong>
+                      <span className="font-semibold text-green-700 text-sm sm:text-base">
+                        Active
+                      </span>
                     </div>
                     {apiAlert.frequency && (
                       <div className="flex flex-wrap items-center gap-2">
@@ -191,7 +205,7 @@ const DashboardPage: React.FC = () => {
                         </span>
                       </div>
                     )}
-                    {apiAlert.sub_categories && apiAlert.sub_categories.length > 0 && (
+                    {apiAlert.sub_categories.length > 0 && (
                       <div>
                         <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
                           Interests:
@@ -200,29 +214,30 @@ const DashboardPage: React.FC = () => {
                           {apiAlert.sub_categories.map((subCat, idx) => (
                             <DisplayDetailTag
                               key={idx}
-                              label={subCat}
+                              label={formatTagLabel(subCat)}
                               color="primary-lightest"
                             />
                           ))}
                         </div>
                       </div>
                     )}
-                    {apiAlert.followup_questions && apiAlert.followup_questions.length > 0 && (
-                      <div>
-                        <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
-                          Follow-up Details:
-                        </strong>
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                          {apiAlert.followup_questions.map((q, idx) => (
-                            <DisplayDetailTag
-                              key={idx}
-                              label={q}
-                              color="accent-teal-light"
-                            />
-                          ))}
+                    {apiAlert.followup_questions &&
+                      apiAlert.followup_questions.length > 0 && (
+                        <div>
+                          <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
+                            Follow-up Details:
+                          </strong>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                            {apiAlert.followup_questions.map((q, idx) => (
+                              <DisplayDetailTag
+                                key={idx}
+                                label={q}
+                                color="accent-teal-light"
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                     {apiAlert.custom_question && (
                       <div>
                         <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
@@ -272,7 +287,9 @@ const DashboardPage: React.FC = () => {
             titleClassName="!text-lg sm:!text-xl !text-gray-600"
           >
             <div className="text-center py-4 sm:py-5 px-4">
-              <p className="text-gray-500 font-medium text-base sm:text-lg">Coming Soon!</p>
+              <p className="text-gray-500 font-medium text-base sm:text-lg">
+                Coming Soon!
+              </p>
               <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Track updates received and insights into your most engaged
                 topics.

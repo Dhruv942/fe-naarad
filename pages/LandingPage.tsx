@@ -469,7 +469,7 @@ const LandingPage: React.FC = () => {
       <header className="absolute top-0 left-0 right-0 z-30 py-4 px-4 sm:px-6 lg:px-8 bg-transparent">
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center h-10 w-10  text-white rounded-xl shadow-lg ring-2 ring-primary/30">
+            <span className="inline-flex items-center justify-center h-10 w-10">
               {ICONS.WHATSAPP_LOGO}
             </span>
             <h2 className="text-xl font-bold text-white tracking-wide">

@@ -1320,7 +1320,7 @@ const InterestSelectionPage: React.FC = () => {
             className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white !py-3.5 px-10 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : <>Next: Fine-Tune Feed</>}
+            {isSubmitting ? "Saving..." : <span>Next: Fine-Tune Feed</span>}
           </Button>
         </div>
       </div>
@@ -1349,7 +1349,7 @@ const InterestSelectionPage: React.FC = () => {
             className="bg-primary hover:bg-primary-dark text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Saving..." : `Next ${ICONS.ARROW_RIGHT}`}
+            {isSubmitting ? "Saving..." : `Next: Fine-Tune Feed`}
           </Button>
         </div>
       </div>
