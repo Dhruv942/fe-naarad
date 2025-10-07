@@ -6,7 +6,7 @@ import Button from "../components/common/Button";
 import { ICONS, PagePath } from "../constants";
 import WhatsAppPreview from "../components/common/WhatsAppPreview";
 import { SampleMessage } from "../types";
-import { login } from "../services/api";
+import { login, getAlertsByUserId } from "../services/api";
 
 // SVG Section Divider Component
 const SectionDivider: React.FC<{
@@ -362,14 +362,30 @@ const LandingPage: React.FC = () => {
           console.log("👤 Updating user data:", updatedUser);
           setUser(updatedUser);
 
-          // Navigate based on intent and whether alerts exist.
-          if (loginIntent === "login" && updatedUser.alerts.length > 0) {
-            console.log(
-              "🏠 Navigating to dashboard (existing user with alerts)"
-            );
-            navigate(PagePath.DASHBOARD);
-          } else {
-            console.log("⭐ Starting new alert creation flow");
+          // Fetch existing alerts from backend to determine if user is new or returning
+          console.log("🔍 Checking if user has existing alerts...");
+          try {
+            const alertsResponse = await getAlertsByUserId(String(userId));
+            console.log("📥 Alerts response:", alertsResponse);
+
+            const hasExistingAlerts =
+              alertsResponse.success &&
+              alertsResponse.alerts &&
+              alertsResponse.alerts.length > 0;
+
+            if (hasExistingAlerts) {
+              console.log(
+                "🏠 Returning user with alerts - navigating to dashboard"
+              );
+              navigate(PagePath.DASHBOARD);
+            } else {
+              console.log("⭐ New user - starting alert creation flow");
+              startNewAlert();
+            }
+          } catch (error) {
+            console.error("❌ Error fetching alerts:", error);
+            // Default to new user flow if fetch fails
+            console.log("⚠️ Defaulting to new user flow");
             startNewAlert();
           }
         } else {

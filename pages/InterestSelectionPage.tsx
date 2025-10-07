@@ -710,68 +710,85 @@ const InterestSelectionPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/95 via-secondary to-gray-900 text-white page-fade-enter">
-      <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-xl shadow-2xl rounded-2xl p-4 sm:p-6 md:p-10 border border-white/10 pb-36 lg:pb-10">
+      <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-xl shadow-2xl rounded-lg sm:rounded-2xl p-3 sm:p-6 md:p-10 border border-white/10 pb-32 sm:pb-36 lg:pb-10">
         <ProgressIndicator
           currentStep={1}
           steps={["Select Interests", "Fine-Tune Feed", "Set Cadence"]}
         />
 
-        <header className="text-center mb-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
+        <header className="text-center mb-6 sm:mb-10">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight px-2">
             Tailor Your Alert:{" "}
-            <span className="text-primary">{activeAlert.name}</span>
+            <span className="text-primary break-words">{activeAlert.name}</span>
           </h1>
-          <p className="text-base sm:text-lg text-primary-lighter/80 mt-4 max-w-3xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-primary-lighter/80 mt-3 sm:mt-4 max-w-3xl mx-auto px-4">
             Select interests for this alert. The more specific you are, the
             better!
           </p>
         </header>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-          <div className="flex-grow lg:w-2/3 space-y-10">
+        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-12">
+          <div className="flex-grow lg:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10">
             {/* --- Section 1: Broad Categories --- */}
             <section id="main-category-section">
-              <h2 className="text-2xl font-semibold text-primary-lighter mb-6">
+              <h2 className="text-xl sm:text-2xl font-semibold text-primary-lighter mb-4 sm:mb-6">
                 1. Choose Broad Categories:
               </h2>
               <ValidationError
                 message={validationErrors["main-category-section"]}
               />
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {mainCategoriesArray.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => handleMainCategorySelect(category)}
-                    className={`p-5 md:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1.5 focus:outline-none focus:ring-4 
-                      ${
-                        activeMainCategory === category.id
-                          ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
-                          : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
-                      }
-                    `}
-                    aria-pressed={activeMainCategory === category.id}
-                  >
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <span className="text-4xl md:text-5xl">
-                        {category.icon}
-                      </span>
-                      <span className="text-md md:text-lg font-semibold tracking-wide">
-                        {category.label}
-                      </span>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+                {mainCategoriesArray.map((category) => {
+                  const isComingSoon =
+                    category.id === "custom" || category.id === "youtube";
+                  return (
+                    <div key={category.id} className="relative">
+                      <button
+                        onClick={() =>
+                          !isComingSoon && handleMainCategorySelect(category)
+                        }
+                        className={`w-full p-4 sm:p-5 md:p-6 rounded-lg sm:rounded-xl shadow-lg transition-all duration-300 ease-in-out focus:outline-none
+                          ${
+                            isComingSoon
+                              ? "bg-gray-600/40 text-gray-400 cursor-not-allowed opacity-60"
+                              : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
+                                  activeMainCategory === category.id
+                                    ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
+                                    : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
+                                }`
+                          }
+                        `}
+                        aria-pressed={activeMainCategory === category.id}
+                        disabled={isComingSoon}
+                      >
+                        <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
+                          <span className="text-3xl sm:text-4xl md:text-5xl">
+                            {category.icon}
+                          </span>
+                          <span className="text-sm sm:text-md md:text-lg font-semibold tracking-wide text-center">
+                            {category.label}
+                          </span>
+                        </div>
+                      </button>
+                      {isComingSoon && (
+                        <div className="absolute bottom-10 sm:bottom-8 lg:bottom-14 left-1/2 transform -translate-x-1/2 bg-amber-400/95 text-gray-900 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap z-10">
+                          Coming Soon
+                        </div>
+                      )}
                     </div>
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
             {/* --- Section 2: Details --- */}
             {currentMainCategoryData && (
               <section
-                className={`p-6 bg-white/10 rounded-xl shadow-lg transition-all duration-500 ease-in-out ${activeMainCategory ? "opacity-100 max-h-[9000px]" : "opacity-0 max-h-0 overflow-hidden"}`}
+                className={`p-4 sm:p-6 bg-white/10 rounded-lg sm:rounded-xl shadow-lg transition-all duration-500 ease-in-out ${activeMainCategory ? "opacity-100 max-h-[9000px]" : "opacity-0 max-h-0 overflow-hidden"}`}
               >
                 {currentMainCategoryData.id !== "custom" ? (
                   <>
-                    <h3 className="text-2xl font-semibold text-primary-lighter mb-6">
+                    <h3 className="text-xl sm:text-2xl font-semibold text-primary-lighter mb-4 sm:mb-6">
                       2. Refine{" "}
                       <span
                         className={`font-bold text-${currentMainCategoryData.color}`}
@@ -784,10 +801,10 @@ const InterestSelectionPage: React.FC = () => {
                     {currentMainCategoryData.subCategories &&
                       currentMainCategoryData.subCategories.length > 0 && (
                         <div
-                          className="space-y-4 mb-6"
+                          className="space-y-3 sm:space-y-4 mb-4 sm:mb-6"
                           id={`sub-category-section-${currentMainCategoryData.id}`}
                         >
-                          <label className="block text-md font-medium text-primary-lighter/90 mb-2">
+                          <label className="block text-sm sm:text-md font-medium text-primary-lighter/90 mb-2">
                             Select sub-categories:
                           </label>
                           <ValidationError
@@ -797,7 +814,7 @@ const InterestSelectionPage: React.FC = () => {
                               ]
                             }
                           />
-                          <div className="flex flex-wrap gap-3">
+                          <div className="flex flex-wrap gap-2 sm:gap-3">
                             {currentMainCategoryData.subCategories.map(
                               (subCat) => (
                                 <TagButton

@@ -93,15 +93,15 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-lightest via-green-50 to-teal-100 py-10 px-4 sm:px-6 lg:px-8 page-fade-enter">
-      <div className="max-w-3xl mx-auto">
-        <header className="mb-12">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="text-center sm:text-left">
-              <h1 className="text-3xl sm:text-4xl font-bold text-secondary tracking-tight">
+    <div className="min-h-screen bg-gradient-to-br from-primary-lightest via-green-50 to-teal-100 py-6 sm:py-10 px-4 sm:px-6 lg:px-8 page-fade-enter">
+      <div className="max-w-5xl mx-auto">
+        <header className="mb-8 sm:mb-12">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="w-full sm:w-auto">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-secondary tracking-tight">
                 Your Dashboard
               </h1>
-              <p className="text-lg text-gray-600 mt-1">
+              <p className="text-base sm:text-lg text-gray-600 mt-1">
                 Manage your personalized WhatsApp updates.
               </p>
             </div>
@@ -109,7 +109,7 @@ const DashboardPage: React.FC = () => {
               onClick={logout}
               variant="danger"
               size="md"
-              className="!py-2.5 px-5 shadow-md hover:shadow-lg"
+              className="!py-2.5 px-5 shadow-md hover:shadow-lg w-full sm:w-auto shrink-0"
               leftIcon={ICONS.CANCEL}
             >
               Logout
@@ -117,7 +117,7 @@ const DashboardPage: React.FC = () => {
           </div>
         </header>
 
-        <div className="mb-8 flex justify-center sm:justify-end">
+        <div className="mb-6 sm:mb-8 flex justify-stretch sm:justify-end">
           <Button
             onClick={startNewAlert}
             variant="primary"
@@ -133,17 +133,17 @@ const DashboardPage: React.FC = () => {
           {/* Loading State */}
           {isLoadingAlerts && (
             <SectionCard className="text-center py-8">
-              <p className="text-gray-600">Loading your alerts...</p>
+              <p className="text-sm sm:text-base text-gray-600">Loading your alerts...</p>
             </SectionCard>
           )}
 
           {/* Error State */}
           {!isLoadingAlerts && alertsError && (
             <SectionCard className="text-center py-8 bg-red-50 border-red-200">
-              <h2 className="text-xl font-semibold text-red-700 mb-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-red-700 mb-2">
                 Error Loading Alerts
               </h2>
-              <p className="text-red-600">{alertsError}</p>
+              <p className="text-sm sm:text-base text-red-600">{alertsError}</p>
             </SectionCard>
           )}
 
@@ -155,35 +155,35 @@ const DashboardPage: React.FC = () => {
                   key={apiAlert.alert_id}
                   className="bg-white/95 backdrop-blur-md shadow-xl-dark border border-gray-200/70"
                 >
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-2xl font-semibold text-gray-800">
+                  <div className="flex justify-between items-start gap-3 sm:gap-4 mb-4">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800 break-words">
                         {apiAlert.main_category} Alert
                       </h2>
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <div className="flex items-center gap-2 shrink-0">
                       <Button
                         onClick={() => handleDeleteAlert(apiAlert.alert_id)}
                         variant="ghost"
                         size="sm"
-                        className="w-full sm:w-auto text-red-500 hover:bg-red-50"
+                        className="text-red-500 hover:bg-red-50 text-sm sm:text-base"
                         leftIcon={ICONS.TRASH}
                       >
                         Delete
                       </Button>
                     </div>
                   </div>
-                  <div className="space-y-3">
-                    <div>
-                      <strong className="font-medium text-gray-500 text-sm">Status:</strong>
-                      <span className="ml-2 font-semibold text-green-700">Active</span>
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <strong className="font-medium text-gray-500 text-xs sm:text-sm">Status:</strong>
+                      <span className="font-semibold text-green-700 text-sm sm:text-base">Active</span>
                     </div>
                     {apiAlert.frequency && (
-                      <div>
-                        <strong className="font-medium text-gray-500 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <strong className="font-medium text-gray-500 text-xs sm:text-sm">
                           Frequency:
                         </strong>
-                        <span className="ml-2 text-gray-700">
+                        <span className="text-gray-700 text-sm sm:text-base">
                           {apiAlert.frequency}
                           {apiAlert.customFrequencyTime
                             ? ` at ${apiAlert.customFrequencyTime}`
@@ -193,10 +193,10 @@ const DashboardPage: React.FC = () => {
                     )}
                     {apiAlert.sub_categories && apiAlert.sub_categories.length > 0 && (
                       <div>
-                        <strong className="font-medium text-gray-500 text-sm block mb-1.5">
+                        <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
                           Interests:
                         </strong>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           {apiAlert.sub_categories.map((subCat, idx) => (
                             <DisplayDetailTag
                               key={idx}
@@ -209,10 +209,10 @@ const DashboardPage: React.FC = () => {
                     )}
                     {apiAlert.followup_questions && apiAlert.followup_questions.length > 0 && (
                       <div>
-                        <strong className="font-medium text-gray-500 text-sm block mb-1.5">
+                        <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
                           Follow-up Details:
                         </strong>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           {apiAlert.followup_questions.map((q, idx) => (
                             <DisplayDetailTag
                               key={idx}
@@ -225,10 +225,10 @@ const DashboardPage: React.FC = () => {
                     )}
                     {apiAlert.custom_question && (
                       <div>
-                        <strong className="font-medium text-gray-500 text-sm block mb-1.5">
+                        <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
                           Custom Preferences:
                         </strong>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
                           <DisplayDetailTag
                             label={apiAlert.custom_question}
                             color="pink-light"
@@ -243,12 +243,12 @@ const DashboardPage: React.FC = () => {
           )}
 
           {/* No Alerts Message */}
-          {apiAlerts.length === 0 && !isLoadingAlerts && (
-            <SectionCard className="text-center py-12">
-              <h2 className="text-2xl font-semibold text-gray-700 mb-2">
+          {apiAlerts.length === 0 && !isLoadingAlerts && !alertsError && (
+            <SectionCard className="text-center py-8 sm:py-12">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-700 mb-2">
                 No Alerts Yet!
               </h2>
-              <p className="text-gray-500 mb-6">
+              <p className="text-sm sm:text-base text-gray-500 mb-6 px-4">
                 Click the button above to create your first personalized alert.
               </p>
               <Button
@@ -256,6 +256,7 @@ const DashboardPage: React.FC = () => {
                 variant="primary"
                 size="md"
                 leftIcon={ICONS.PLUS}
+                className="w-full sm:w-auto"
               >
                 Create Your First Alert
               </Button>
@@ -263,16 +264,16 @@ const DashboardPage: React.FC = () => {
           )}
         </div>
 
-        <div className="mt-12">
+        <div className="mt-8 sm:mt-12">
           <SectionCard
             title="Update History & Analytics"
-            icon={<span className="text-primary text-3xl">📊</span>}
-            className="opacity-80 bg-white/80 backdrop-blur-md shadow-lg border border-gray-200/50 hover:opacity-100"
-            titleClassName="!text-xl !text-gray-600"
+            icon={<span className="text-primary text-2xl sm:text-3xl">📊</span>}
+            className="opacity-80 bg-white/80 backdrop-blur-md shadow-lg border border-gray-200/50 hover:opacity-100 transition-opacity"
+            titleClassName="!text-lg sm:!text-xl !text-gray-600"
           >
-            <div className="text-center py-5">
-              <p className="text-gray-500 font-medium text-lg">Coming Soon!</p>
-              <p className="text-gray-500 mt-1">
+            <div className="text-center py-4 sm:py-5 px-4">
+              <p className="text-gray-500 font-medium text-base sm:text-lg">Coming Soon!</p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Track updates received and insights into your most engaged
                 topics.
               </p>
