@@ -10,6 +10,15 @@ export interface RSSFeedItem {
   imageUrl?: string;
 }
 
+// Simple in-memory cache with 5-minute expiry
+interface CacheEntry {
+  data: RSSFeedItem[];
+  timestamp: number;
+}
+
+const RSS_CACHE: Map<string, CacheEntry> = new Map();
+const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+
 export const CATEGORY_RSS_FEEDS: Record<string, string[]> = {
   sports: [
     "https://www.thehindu.com/sport/feeder/default.rss",
@@ -126,11 +135,20 @@ const fetchSingleRSSFeed = async (
 };
 
 /**
- * Fetch RSS feeds for specific categories
+ * Fetch RSS feeds for specific categories with caching
  */
 export const fetchRSSFeedsByCategories = async (
   categories: string[]
 ): Promise<RSSFeedItem[]> => {
+  const cacheKey = categories.sort().join(',');
+
+  // Check cache first
+  const cached = RSS_CACHE.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < CACHE_EXPIRY_MS) {
+    console.log(`✅ Using cached RSS feeds for: ${cacheKey}`);
+    return cached.data;
+  }
+
   console.log("📡 Fetching RSS feeds for categories:", categories);
 
   const allFeedUrls: string[] = [];
@@ -154,6 +172,12 @@ export const fetchRSSFeedsByCategories = async (
 
   // Flatten and combine all feed items
   const allItems = feedResults.flat();
+
+  // Cache the results
+  RSS_CACHE.set(cacheKey, {
+    data: allItems,
+    timestamp: Date.now()
+  });
 
   console.log(`✅ Total RSS items fetched: ${allItems.length}`);
   return allItems;
