@@ -25,8 +25,6 @@ import {
   AiFollowUpQuestion,
   FollowUpAnswer,
 } from "../types";
-import { createAlert } from "../services/api";
-import { transformAlertToApiFormat } from "../utils/alertTransformer";
 
 const ValidationError: React.FC<{ message?: string }> = ({ message }) => {
   if (!message) return null;
@@ -62,8 +60,6 @@ const InterestSelectionPage: React.FC = () => {
     Record<string, string>
   >({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [apiError, setApiError] = useState("");
 
   const mainCategoriesArray = Object.values(INTEREST_TAG_HIERARCHY);
 
@@ -96,6 +92,11 @@ const InterestSelectionPage: React.FC = () => {
   };
 
   const handleMainCategorySelect = (category: MainCategory) => {
+    // Prevent selection if category is coming soon or not ready
+    if (category.id === "youtube" || category.id === "custom") {
+      return;
+    }
+
     clearValidation();
     const isDeselecting = activeMainCategory === category.id;
 
@@ -150,6 +151,16 @@ const InterestSelectionPage: React.FC = () => {
   const handleSubCategorySelect = (subCategory: SubCategory) => {
     clearValidation();
     const isDeselecting = activeSubCategory === subCategory.id;
+    const isSwitching =
+      activeMainCategory === "sports" && activeSubCategory !== subCategory.id;
+
+    if (isSwitching && !isDeselecting) {
+      // Clear follow-up answers when switching between sports to prevent carrying over irrelevant data.
+      handleUpdateAlert((prev) => ({
+        ...prev,
+        sports: { ...prev.sports, followUpAnswers: {} },
+      }));
+    }
 
     if (isDeselecting) {
       setActiveSubCategory(null);
@@ -175,6 +186,13 @@ const InterestSelectionPage: React.FC = () => {
           const nextSectionId = `tags-section-${subCategory.id}`;
           document
             .getElementById(nextSectionId)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (
+          subCategory.followUpQuestions &&
+          subCategory.followUpQuestions.length > 0
+        ) {
+          document
+            .getElementById("follow-up-section")
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
@@ -501,16 +519,23 @@ const InterestSelectionPage: React.FC = () => {
         ) || null
       : null;
 
+  const questionsToRender =
+    currentSubCategoryData?.followUpQuestions ||
+    currentMainCategoryData?.followUpQuestions ||
+    [];
+  const isReadyForFollowUps =
+    !currentMainCategoryData?.subCategories ||
+    (currentMainCategoryData.subCategories && !!activeSubCategory);
   const showFollowUpQuestions =
-    currentMainCategoryData?.followUpQuestions?.length > 0 &&
-    (!currentMainCategoryData.subCategories ||
-      (currentMainCategoryData.subCategories.length > 0 &&
-        !!activeSubCategory));
+    questionsToRender.length > 0 && isReadyForFollowUps;
 
-  const showFollowUpPrompt =
-    currentMainCategoryData?.followUpQuestions?.length > 0 &&
-    currentMainCategoryData.subCategories?.length > 0 &&
-    !activeSubCategory;
+  const hasQuestionsButNeedsSubCat =
+    currentMainCategoryData?.subCategories &&
+    !activeSubCategory &&
+    (currentMainCategoryData.followUpQuestions ||
+      currentMainCategoryData.subCategories.some(
+        (sc) => sc.followUpQuestions && sc.followUpQuestions.length > 0
+      ));
 
   const validateSelections = (): Record<string, string> => {
     const errors: Record<string, string> = {};
@@ -555,28 +580,37 @@ const InterestSelectionPage: React.FC = () => {
           errors["other-sport-input-section"] =
             `Please specify the name of the 'Other Sport'.`;
         } else if (!isOtherSportSelected && !hasSelectedTags) {
+          const subCatLabel = mainCatData.subCategories?.find(
+            (sc) => sc.id === activeSubCategory
+          )?.label;
           errors[tagsSectionId] =
-            `Please select at least one interest tag for ${currentSubCategoryData?.label || mainCatData.label}.`;
+            `Please select at least one interest tag for ${subCatLabel || mainCatData.label}.`;
         }
       }
 
-      // New validation for follow-up questions
-      const currentShowFollowUpQuestions =
-        mainCatData?.followUpQuestions?.length > 0 &&
-        (!mainCatData.subCategories ||
-          (mainCatData.subCategories.length > 0 && !!activeSubCategory));
+      const subCatDataForValidation = mainCatData.subCategories?.find(
+        (sc) => sc.id === activeSubCategory
+      );
+      const questionsForValidation =
+        subCatDataForValidation?.followUpQuestions ||
+        mainCatData.followUpQuestions ||
+        [];
+      const isReadyForValidation =
+        !mainCatData.subCategories || !!activeSubCategory;
 
-      if (currentShowFollowUpQuestions) {
+      if (questionsForValidation.length > 0 && isReadyForValidation) {
         const followUpAnswers = activeAlert[catKey]?.followUpAnswers;
         let hasAtLeastOneAnswer = false;
         if (followUpAnswers) {
-          for (const questionId in followUpAnswers) {
-            const answer = followUpAnswers[questionId];
+          // Check if any of the *relevant* questions have an answer
+          for (const question of questionsForValidation) {
+            const answer = followUpAnswers[question.id];
             if (
-              (answer.selectedPredefinedTags &&
+              answer &&
+              ((answer.selectedPredefinedTags &&
                 answer.selectedPredefinedTags.length > 0) ||
-              (answer.customAnswerViaOther &&
-                answer.customAnswerViaOther.trim() !== "")
+                (answer.customAnswerViaOther &&
+                  answer.customAnswerViaOther.trim() !== ""))
             ) {
               hasAtLeastOneAnswer = true;
               break;
@@ -585,7 +619,7 @@ const InterestSelectionPage: React.FC = () => {
         }
         if (!hasAtLeastOneAnswer) {
           errors["follow-up-section"] =
-            `For ${mainCatData.label}, please answer at least one follow-up question.`;
+            `For ${subCatDataForValidation?.label || mainCatData.label}, please answer at least one follow-up question to continue.`;
         }
       }
     }
@@ -593,94 +627,13 @@ const InterestSelectionPage: React.FC = () => {
     return errors;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setHasAttemptedSubmit(true);
-
-    // Create a working copy of activeAlert to include any pending changes
-    let workingAlert = activeAlert;
-
-    // Save any pending instruction tag that user typed but didn't click "Add"
-    if (newInstructionTag.trim() && activeMainCategory && workingAlert) {
-      console.log(
-        "💾 Saving pending instruction tag before submit:",
-        newInstructionTag
-      );
-      const categoryKey = activeMainCategory as STCKType;
-      const currentCategory = workingAlert[
-        categoryKey
-      ] as CategorySpecificPreferences;
-      const currentInstructionTags = currentCategory.instructionTags || [];
-
-      if (!currentInstructionTags.includes(newInstructionTag.trim())) {
-        workingAlert = {
-          ...workingAlert,
-          [categoryKey]: {
-            ...currentCategory,
-            instructionTags: [
-              ...currentInstructionTags,
-              newInstructionTag.trim(),
-            ],
-          },
-        };
-        // Update the state too
-        setActiveAlert(workingAlert);
-        setNewInstructionTag("");
-        console.log(
-          "✅ Pending instruction tag added:",
-          newInstructionTag.trim()
-        );
-      }
-    }
-
     const errors = validateSelections();
     setValidationErrors(errors);
 
-    if (Object.keys(errors).length === 0 && workingAlert) {
-      setIsSubmitting(true);
-      setApiError("");
-
-      console.log("🚀 Submitting alert to backend...");
-
-      try {
-        // Get user_id from localStorage
-        const user_id = localStorage.getItem("user_id");
-
-        if (!user_id) {
-          console.error("❌ No user_id found in localStorage");
-          setApiError("User session expired. Please login again.");
-          setIsSubmitting(false);
-          return;
-        }
-
-        console.log("👤 Using user_id:", user_id);
-
-        // Transform alert data to API format (use workingAlert which has pending changes)
-        const alertData = transformAlertToApiFormat(workingAlert);
-
-        // Call API
-        const response = await createAlert({
-          ...alertData,
-          user_id,
-        });
-
-        console.log("📥 Create Alert API Response:", response);
-
-        if (response.success) {
-          console.log("✅ Alert created successfully!");
-          // Navigate to next step
-          navigate(PagePath.TUNING);
-        } else {
-          console.error("❌ Failed to create alert:", response.error);
-          setApiError(
-            response.error || "Failed to create alert. Please try again."
-          );
-        }
-      } catch (error) {
-        console.error("💥 Error submitting alert:", error);
-        setApiError("An unexpected error occurred. Please try again.");
-      } finally {
-        setIsSubmitting(false);
-      }
+    if (Object.keys(errors).length === 0) {
+      navigate(PagePath.TUNING);
     }
   };
 
@@ -710,72 +663,64 @@ const InterestSelectionPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/95 via-secondary to-gray-900 text-white page-fade-enter">
-      <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-xl shadow-2xl rounded-lg sm:rounded-2xl p-3 sm:p-6 md:p-10 border border-white/10 pb-32 sm:pb-36 lg:pb-10">
+      <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-xl shadow-2xl rounded-2xl p-4 sm:p-6 md:p-10 border border-white/10 pb-36 lg:pb-10">
         <ProgressIndicator
           currentStep={1}
           steps={["Select Interests", "Fine-Tune Feed", "Set Cadence"]}
         />
 
-        <header className="text-center mb-6 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight px-2">
+        <header className="text-center mb-10">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white tracking-tight">
             Tailor Your Alert:{" "}
-            <span className="text-primary break-words">{activeAlert.name}</span>
+            <span className="text-primary">{activeAlert.name}</span>
           </h1>
-          <p className="text-sm sm:text-base md:text-lg text-primary-lighter/80 mt-3 sm:mt-4 max-w-3xl mx-auto px-4">
+          <p className="text-base sm:text-lg text-primary-lighter/80 mt-4 max-w-3xl mx-auto">
             Select interests for this alert. The more specific you are, the
             better!
           </p>
         </header>
 
-        <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-12">
-          <div className="flex-grow lg:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <div className="flex-grow lg:w-2/3 space-y-10">
             {/* --- Section 1: Broad Categories --- */}
             <section id="main-category-section">
-              <h2 className="text-xl sm:text-2xl font-semibold text-primary-lighter mb-4 sm:mb-6">
+              <h2 className="text-2xl font-semibold text-primary-lighter mb-6">
                 1. Choose Broad Categories:
               </h2>
               <ValidationError
                 message={validationErrors["main-category-section"]}
               />
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {mainCategoriesArray.map((category) => {
-                  const isComingSoon =
-                    category.id === "custom" || category.id === "youtube";
+                  const isDisabled = category.id === "youtube" || category.id === "custom";
                   return (
-                    <div key={category.id} className="relative">
-                      <button
-                        onClick={() =>
-                          !isComingSoon && handleMainCategorySelect(category)
+                    <button
+                      key={category.id}
+                      onClick={() => handleMainCategorySelect(category)}
+                      disabled={isDisabled}
+                      className={`p-5 md:p-6 rounded-xl shadow-lg transition-all duration-300 ease-in-out focus:outline-none
+                        ${isDisabled
+                          ? 'bg-gray-600/30 text-gray-400 cursor-not-allowed opacity-50'
+                          : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
+                              activeMainCategory === category.id
+                                ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
+                                : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
+                            }`
                         }
-                        className={`w-full p-4 sm:p-5 md:p-6 rounded-lg sm:rounded-xl shadow-lg transition-all duration-300 ease-in-out focus:outline-none
-                          ${
-                            isComingSoon
-                              ? "bg-gray-600/40 text-gray-400 cursor-not-allowed opacity-60"
-                              : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
-                                  activeMainCategory === category.id
-                                    ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
-                                    : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
-                                }`
-                          }
-                        `}
-                        aria-pressed={activeMainCategory === category.id}
-                        disabled={isComingSoon}
-                      >
-                        <div className="flex flex-col items-center justify-center space-y-2 sm:space-y-3">
-                          <span className="text-3xl sm:text-4xl md:text-5xl">
-                            {category.icon}
-                          </span>
-                          <span className="text-sm sm:text-md md:text-lg font-semibold tracking-wide text-center">
-                            {category.label}
-                          </span>
-                        </div>
-                      </button>
-                      {isComingSoon && (
-                        <div className="absolute bottom-10 sm:bottom-8 lg:bottom-14 left-1/2 transform -translate-x-1/2 bg-amber-400/95 text-gray-900 text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap z-10">
-                          Coming Soon
-                        </div>
-                      )}
-                    </div>
+                      `}
+                      aria-pressed={activeMainCategory === category.id}
+                      aria-disabled={isDisabled}
+                    >
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <span className="text-4xl md:text-5xl">
+                          {category.icon}
+                        </span>
+                        <span className="text-md md:text-lg font-semibold tracking-wide">
+                          {category.label}
+                          {isDisabled && <span className="block text-xs mt-1">(Coming Soon)</span>}
+                        </span>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
@@ -784,11 +729,11 @@ const InterestSelectionPage: React.FC = () => {
             {/* --- Section 2: Details --- */}
             {currentMainCategoryData && (
               <section
-                className={`p-4 sm:p-6 bg-white/10 rounded-lg sm:rounded-xl shadow-lg transition-all duration-500 ease-in-out ${activeMainCategory ? "opacity-100 max-h-[9000px]" : "opacity-0 max-h-0 overflow-hidden"}`}
+                className={`p-6 bg-white/10 rounded-xl shadow-lg transition-all duration-500 ease-in-out ${activeMainCategory ? "opacity-100 max-h-[9000px]" : "opacity-0 max-h-0 overflow-hidden"}`}
               >
                 {currentMainCategoryData.id !== "custom" ? (
                   <>
-                    <h3 className="text-xl sm:text-2xl font-semibold text-primary-lighter mb-4 sm:mb-6">
+                    <h3 className="text-2xl font-semibold text-primary-lighter mb-6">
                       2. Refine{" "}
                       <span
                         className={`font-bold text-${currentMainCategoryData.color}`}
@@ -801,10 +746,10 @@ const InterestSelectionPage: React.FC = () => {
                     {currentMainCategoryData.subCategories &&
                       currentMainCategoryData.subCategories.length > 0 && (
                         <div
-                          className="space-y-3 sm:space-y-4 mb-4 sm:mb-6"
+                          className="space-y-4 mb-6"
                           id={`sub-category-section-${currentMainCategoryData.id}`}
                         >
-                          <label className="block text-sm sm:text-md font-medium text-primary-lighter/90 mb-2">
+                          <label className="block text-md font-medium text-primary-lighter/90 mb-2">
                             Select sub-categories:
                           </label>
                           <ValidationError
@@ -814,7 +759,7 @@ const InterestSelectionPage: React.FC = () => {
                               ]
                             }
                           />
-                          <div className="flex flex-wrap gap-2 sm:gap-3">
+                          <div className="flex flex-wrap gap-3">
                             {currentMainCategoryData.subCategories.map(
                               (subCat) => (
                                 <TagButton
@@ -930,11 +875,12 @@ const InterestSelectionPage: React.FC = () => {
                             {ICONS.LIGHTBULB}
                           </span>
                           <span className="leading-tight">
-                            Fixed Follow-Up Questions for{" "}
+                            Follow-Up Questions for{" "}
                             <span
                               className={`font-bold text-${currentMainCategoryData.color}`}
                             >
-                              {currentMainCategoryData.label}
+                              {currentSubCategoryData?.label ||
+                                currentMainCategoryData.label}
                             </span>
                             :
                           </span>
@@ -947,7 +893,7 @@ const InterestSelectionPage: React.FC = () => {
                             `Answer a few questions to fine-tune your ${currentMainCategoryData.label} updates.`}
                         </p>
                         <div className="space-y-8 ml-8">
-                          {currentMainCategoryData.followUpQuestions.map(
+                          {questionsToRender.map(
                             (question: FollowUpQuestionType) => {
                               const catKey =
                                 currentMainCategoryData.id as STCKType;
@@ -979,22 +925,6 @@ const InterestSelectionPage: React.FC = () => {
                                   dynamicPredefinedTags =
                                     currentSubCategoryData.popularPlayers;
                                 }
-                              }
-                              if (
-                                catKey === "sports" &&
-                                (activeSubCategory === "sports_other" ||
-                                  !currentSubCategoryData ||
-                                  (question.id === "favTeam" &&
-                                    !currentSubCategoryData.popularTeams) ||
-                                  (question.id === "favPlayer" &&
-                                    !currentSubCategoryData.popularPlayers))
-                              ) {
-                                dynamicPredefinedTags =
-                                  question.predefinedAnswerTags?.filter(
-                                    (tag) =>
-                                      !tag.id.startsWith("favTeam_") &&
-                                      !tag.id.startsWith("favPlayer_")
-                                  ) || [];
                               }
 
                               const noPreferenceTag: TagType = {
@@ -1082,7 +1012,7 @@ const InterestSelectionPage: React.FC = () => {
                       </div>
                     )}
 
-                    {showFollowUpPrompt && (
+                    {hasQuestionsButNeedsSubCat && (
                       <div className="mt-8 pt-6 border-t border-white/10 text-center">
                         <div className="p-4 bg-white/5 rounded-lg border border-white/10 animate-pulse">
                           <p className="text-primary-lighter/70 italic">
@@ -1299,17 +1229,11 @@ const InterestSelectionPage: React.FC = () => {
 
         {/* Desktop-only button container */}
         <div className="hidden lg:flex mt-12 pt-8 border-t border-primary-lighter/20 justify-between items-center">
-          {apiError && (
-            <div className="w-full mb-4 bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm">
-              {apiError}
-            </div>
-          )}
           <Button
             onClick={() => navigate(PagePath.DASHBOARD)}
             variant="ghost"
             size="lg"
             className="w-auto text-primary-lighter/80 hover:text-white"
-            disabled={isSubmitting}
           >
             {ICONS.ARROW_LEFT} Back to Dashboard
           </Button>
@@ -1317,28 +1241,21 @@ const InterestSelectionPage: React.FC = () => {
             onClick={handleSubmit}
             variant="primary"
             size="lg"
-            className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white !py-3.5 px-10 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSubmitting}
+            className="w-full sm:w-auto bg-primary hover:bg-primary-dark text-white !py-3.5 px-10 shadow-lg hover:shadow-xl"
           >
-            {isSubmitting ? "Saving..." : <span>Next: Fine-Tune Feed</span>}
+            Next: Fine-Tune Feed {ICONS.ARROW_RIGHT}
           </Button>
         </div>
       </div>
 
       {/* Mobile-only sticky footer */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-20 p-4 bg-gray-950/90 backdrop-blur-sm border-t border-primary-lighter/20">
-        {apiError && (
-          <div className="mb-3 bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-2 rounded-lg text-xs">
-            {apiError}
-          </div>
-        )}
         <div className="flex justify-between items-center max-w-7xl mx-auto">
           <Button
             onClick={() => navigate(PagePath.DASHBOARD)}
             variant="ghost"
             size="md"
             className="text-primary-lighter/80 hover:text-white"
-            disabled={isSubmitting}
           >
             {ICONS.ARROW_LEFT} Back
           </Button>
@@ -1346,10 +1263,9 @@ const InterestSelectionPage: React.FC = () => {
             onClick={handleSubmit}
             variant="primary"
             size="md"
-            className="bg-primary hover:bg-primary-dark text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSubmitting}
+            className="bg-primary hover:bg-primary-dark text-white shadow-lg"
           >
-            {isSubmitting ? "Saving..." : `Next: Fine-Tune Feed`}
+            Next {ICONS.ARROW_RIGHT}
           </Button>
         </div>
       </div>
