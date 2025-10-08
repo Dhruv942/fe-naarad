@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePreferences } from "../contexts/PreferencesContext";
 import Input from "../components/common/Input";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import Button from "../components/common/Button";
 import { ICONS, PagePath } from "../constants";
 import WhatsAppPreview from "../components/common/WhatsAppPreview";
@@ -779,24 +781,44 @@ const LandingPage: React.FC = () => {
                 inputClassName="bg-white/5 text-white placeholder-gray-400/60 border-white/20 focus:border-primary focus:ring-primary disabled:opacity-50"
                 labelClassName="!text-primary-lighter/90 !font-medium"
               />
-              <Input
-                id="whatsappNumber"
-                label="WhatsApp Number"
-                type="tel"
-                placeholder="+1234567890"
-                value={whatsappNumber}
-                onChange={(e) => {
-                  setWhatsappNumber(e.target.value);
-                  if (whatsappError) validateWhatsappNumber(e.target.value);
-                }}
-                onBlur={() => validateWhatsappNumber(whatsappNumber)}
-                icon={ICONS.PHONE}
-                error={whatsappError}
-                required
-                disabled={isLoading}
-                inputClassName="bg-white/5 text-white placeholder-gray-400/60 border-white/20 focus:border-primary focus:ring-primary disabled:opacity-50"
-                labelClassName="!text-primary-lighter/90 !font-medium"
-              />
+              <div>
+                <label
+                  htmlFor="whatsappNumberPhone"
+                  className="block text-sm font-medium !text-primary-lighter/90 !font-medium mb-2"
+                >
+                  WhatsApp Number
+                </label>
+                <div className="bg-white/5 border border-white/20 rounded-lg p-1 focus-within:border-primary">
+                  <PhoneInput
+                    country={"in"}
+                    value={whatsappNumber}
+                    onChange={(value) => {
+                      setWhatsappNumber(value);
+                      if (whatsappError) validateWhatsappNumber(`+${value}`);
+                    }}
+                    onBlur={() => validateWhatsappNumber(`+${whatsappNumber}`)}
+                    inputProps={{
+                      name: "whatsappNumberPhone",
+                      id: "whatsappNumberPhone",
+                      required: true,
+                      disabled: isLoading,
+                    }}
+                    inputClass="!bg-transparent !text-white !border-0 !w-full"
+                    buttonClass="!bg-transparent !border-0"
+                    containerClass="w-full"
+                    dropdownClass="!bg-gray-800 !text-white"
+                    enableSearch
+                    disableSearchIcon
+                  />
+                </div>
+                {whatsappError && (
+                  <p className="mt-2 text-sm text-red-400">{whatsappError}</p>
+                )}
+                <p className="text-xs text-primary-lighter/60 pt-1">
+                  We use your WhatsApp number to deliver personalized updates.
+                  Standard rates may apply.
+                </p>
+              </div>
               <p className="text-xs text-primary-lighter/60 text-center pt-1">
                 We use your WhatsApp number to deliver personalized updates.
                 Standard rates may apply.
