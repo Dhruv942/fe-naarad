@@ -250,16 +250,32 @@ export const generateSampleMessage = async (
   user: UserPreferences
 ): Promise<SampleMessage> => {
   const userPreferencesPrompt = formatAlertForPrompt(alert, user);
-  const fullPrompt = `Based on the user's alert configuration, generate a single, realistic, and compelling sample WhatsApp update. The response MUST be a valid JSON object.
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
-User Config:
+  const fullPrompt = `You are a personalized news curator. Generate ONE highly realistic and engaging WhatsApp news update based on the user's exact preferences. Make it feel like REAL breaking news from TODAY (${today}).
+
+User Configuration:
 ${userPreferencesPrompt}
 
-The JSON object must have this structure:
+CRITICAL REQUIREMENTS:
+- **Deep Personalization**: Follow the user's selected categories, subcategories, specific interests, and follow-up answers EXACTLY
+  - If they selected specific teams/players/shows, generate news ONLY about those
+  - If they answered preference questions, tailor the content to match those answers
+  - If they provided custom instructions, strictly follow them
+
+- **Authenticity**: Include specific names, numbers, scores, statistics, or details that make this feel like real news from ${today}
+- **Engagement**: Start with a hook, include context, and end with value
+- **Custom Instructions**: Respect all user preferences like "no spoilers", "include scores", format preferences, etc.
+
+The JSON object must have this structure (return ONLY this, no extra text):
 {
-  "summaryText": "string",
-  "imageSuggestion": "string (a brief suggestion for a relevant emoji or a short image description)",
-  "actionText": "string"
+  "summaryText": "Highly personalized and realistic news update with specific details that perfectly match user's preferences (100-150 words)",
+  "imageSuggestion": "contextually relevant emoji that matches the news type",
+  "actionText": "compelling action phrase that fits the content (e.g., 'Watch Now', 'Read Analysis', 'See Full Report')"
 }
 
 JSON Response:`;
@@ -308,22 +324,46 @@ export const generateTuningSamples = async (
       year: "numeric",
     });
 
-    const fullPrompt = `Generate 6 realistic WhatsApp news updates as JSON array. Make them feel like REAL breaking news from today (${today}).
+    const fullPrompt = `You are a personalized news curator. Generate 6 highly realistic and engaging WhatsApp news updates as a JSON array. These should feel like REAL, breaking news from TODAY (${today}).
 
 ${userPreferencesPrompt}
 
-Requirements:
-- Create realistic news that feels current and authentic
-- Include specific details, names, numbers, scores where relevant
-- Vary formats: breaking news, match updates, announcements, analysis
-- Match user's custom preferences/questions if provided
-- Use relevant emojis for imageUrl
+CRITICAL REQUIREMENTS:
+1. **Deep Personalization**: Strictly follow the user's selected categories, subcategories, interests, and follow-up answers
+   - If user selected specific teams/players, generate news ONLY about those teams/players
+   - If user answered follow-up questions (e.g., favorite team, content preferences), make news hyper-relevant to those answers
+   - If user provided custom instructions (e.g., "no spoilers", "include scores"), strictly adhere to them
 
-JSON format:
+2. **Authenticity & Realism**:
+   - Use TODAY's date (${today}) for context
+   - Include specific names, numbers, scores, statistics, locations
+   - Reference real teams, players, actors, shows, events that match user interests
+   - Write like a professional journalist with credible details
+   - Vary news types: breaking news, match results, announcements, interviews, analysis, rumors
+
+3. **Engaging Format**:
+   - Start with attention-grabbing emoji or key fact
+   - Keep summaries concise but informative (100-150 words max)
+   - Include context that shows you understand user's preferences
+   - Use actionable CTAs that match the content type
+
+4. **Variety & Quality**:
+   - Mix different types of updates (scores, transfers, releases, reviews, analysis)
+   - Balance urgency levels (breaking news vs. feature stories)
+   - Ensure each update feels unique and valuable
+   - Use contextually appropriate emojis for imageUrl
+
+5. **Custom Instructions Compliance**:
+   - If user wants "no spoilers", avoid plot details
+   - If user wants "scores only", include final scores prominently
+   - If user specified language/format preferences, follow them exactly
+   - Respect any "avoid" or "focus on" instructions
+
+JSON format (return ONLY this array, no extra text):
 [{
-  "summaryText": "realistic news update with specific details (max 150 words)",
-  "imageUrl": "relevant emoji",
-  "actionText": "action phrase"
+  "summaryText": "Highly personalized news update with specific names, numbers, and details that match user's exact preferences",
+  "imageUrl": "contextually relevant emoji",
+  "actionText": "compelling action phrase (e.g., 'Watch Highlights', 'Read Full Story', 'See Stats')"
 }]
 
 JSON Response:`;
