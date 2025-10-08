@@ -7,6 +7,8 @@ import SectionCard from "../components/common/SectionCard";
 import ProgressIndicator from "../components/common/ProgressIndicator";
 import { ICONS, PagePath } from "../constants";
 import { UpdateFrequency, Alert } from "../types";
+import { createAlert } from "../services/api";
+import { transformAlertToApiFormat } from "../utils/alertTransformer";
 
 const FrequencySettingsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -47,14 +49,52 @@ const FrequencySettingsPage: React.FC = () => {
     setTimeError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Since only REAL_TIME is allowed, no need to validate customTime
     setTimeError("");
-    saveActiveAlert();
-    alert("Alert Saved! You're all set. Redirecting to your dashboard...");
-    navigate(PagePath.DASHBOARD);
+
+    if (!activeAlert) return;
+
+    try {
+      // Get user_id from localStorage
+      const userId = localStorage.getItem("user_id");
+
+      if (!userId) {
+        alert("User ID not found. Please login again.");
+        navigate(PagePath.LANDING);
+        return;
+      }
+
+      console.log("📤 Creating alert with user_id:", userId);
+      console.log("📦 Active alert data:", activeAlert);
+
+      // Transform alert to API format
+      const alertData = transformAlertToApiFormat(activeAlert);
+      console.log("🔄 Transformed alert data:", alertData);
+
+      // Call backend API to create alert
+      const response = await createAlert({
+        ...alertData,
+        user_id: userId,
+      });
+
+      console.log("📥 Backend response:", response);
+
+      if (response.success) {
+        // Save to local state as well
+        saveActiveAlert();
+        alert("Alert Saved! You're all set. Redirecting to your dashboard...");
+        navigate(PagePath.DASHBOARD);
+      } else {
+        console.error("❌ Failed to create alert:", response.error);
+        alert(`Failed to save alert: ${response.error || "Unknown error"}`);
+      }
+    } catch (error) {
+      console.error("❌ Error creating alert:", error);
+      alert("An error occurred while saving your alert. Please try again.");
+    }
   };
 
   return (

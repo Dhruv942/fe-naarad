@@ -628,6 +628,29 @@ const InterestSelectionPage: React.FC = () => {
   };
 
   const handleSubmit = () => {
+    // If user typed a custom instruction but didn't press Add, include it now
+    if (
+      currentMainCategoryData &&
+      currentMainCategoryData.id !== "custom" &&
+      newInstructionTag.trim()
+    ) {
+      const catKey = currentMainCategoryData.id as STCKType;
+      handleUpdateAlert((prev) => {
+        const currentCategory = prev[catKey] as CategorySpecificPreferences;
+        const existing = currentCategory.instructionTags || [];
+        const trimmed = newInstructionTag.trim();
+        if (existing.includes(trimmed)) return prev;
+        return {
+          ...prev,
+          [catKey]: {
+            ...currentCategory,
+            instructionTags: [...existing, trimmed],
+          },
+        };
+      });
+      setNewInstructionTag("");
+    }
+
     setHasAttemptedSubmit(true);
     const errors = validateSelections();
     setValidationErrors(errors);
@@ -692,20 +715,22 @@ const InterestSelectionPage: React.FC = () => {
               />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {mainCategoriesArray.map((category) => {
-                  const isDisabled = category.id === "youtube" || category.id === "custom";
+                  const isDisabled =
+                    category.id === "youtube" || category.id === "custom";
                   return (
                     <button
                       key={category.id}
                       onClick={() => handleMainCategorySelect(category)}
                       disabled={isDisabled}
                       className={`p-5 md:p-6 rounded-xl shadow-lg transition-all duration-300 ease-in-out focus:outline-none
-                        ${isDisabled
-                          ? 'bg-gray-600/30 text-gray-400 cursor-not-allowed opacity-50'
-                          : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
-                              activeMainCategory === category.id
-                                ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
-                                : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
-                            }`
+                        ${
+                          isDisabled
+                            ? "bg-gray-600/30 text-gray-400 cursor-not-allowed opacity-50"
+                            : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
+                                activeMainCategory === category.id
+                                  ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
+                                  : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
+                              }`
                         }
                       `}
                       aria-pressed={activeMainCategory === category.id}
@@ -717,7 +742,11 @@ const InterestSelectionPage: React.FC = () => {
                         </span>
                         <span className="text-md md:text-lg font-semibold tracking-wide">
                           {category.label}
-                          {isDisabled && <span className="block text-xs mt-1">(Coming Soon)</span>}
+                          {isDisabled && (
+                            <span className="block text-xs mt-1">
+                              (Coming Soon)
+                            </span>
+                          )}
                         </span>
                       </div>
                     </button>

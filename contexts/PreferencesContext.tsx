@@ -82,8 +82,11 @@ const useProviderValue = (
   };
 
   const startNewAlert = () => {
+    // Get user_id from localStorage (set during login)
+    const userId = localStorage.getItem("user_id") || `new-${Date.now()}`;
+
     const newAlert: Alert = {
-      id: `new-${Date.now()}`, // Temporary ID
+      id: userId, // Use backend user_id instead of temporary ID
       name: `New Alert `,
       ...initialAlertData,
     };
@@ -108,7 +111,7 @@ const useProviderValue = (
       const existingIndex = prevUser.alerts.findIndex(
         (a) => a.id === activeAlert.id
       );
-      let newAlerts;
+      let newAlerts: Alert[];
       if (existingIndex > -1) {
         // Update existing alert
         newAlerts = [...prevUser.alerts];
