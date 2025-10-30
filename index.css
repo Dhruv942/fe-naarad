@@ -1,0 +1,5 @@
+/* Intentionally minimal to satisfy index.html link and avoid 404 */
+/* Tailwind is injected via CDN; place any overrides here if needed. */
+
+:root {
+}

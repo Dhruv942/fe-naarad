@@ -57,8 +57,11 @@ const DashboardPage: React.FC = () => {
     try {
       const response = await getAlertsByUserId(userId);
 
-      if (response.success && response.alerts) {
-        setApiAlerts(response.alerts);
+      if (response.success) {
+        const alertsArray = Array.isArray(response.alerts)
+          ? response.alerts
+          : [];
+        setApiAlerts(alertsArray);
       } else {
         setAlertsError(response.error || "Failed to fetch alerts");
       }

@@ -268,57 +268,14 @@ const LandingPage: React.FC = () => {
       console.log("📤 Sending login request to API...");
 
       try {
-        // Parse whatsappNumber to extract country code and phone number
-        // Expected format: +919876543210 or +1234567890
-        let country_code = "";
-        let phone_number = "";
-
-        const cleaned = whatsappNumber.replace(/\s+/g, ""); // Remove spaces
-
-        if (cleaned.startsWith("+")) {
-          // Common country codes to check
-          const commonCodes = [
-            "+91",
-            "+1",
-            "+44",
-            "+61",
-            "+86",
-            "+81",
-            "+33",
-            "+49",
-            "+39",
-            "+7",
-            "+971",
-            "+966",
-            "+92",
-            "+880",
-          ];
-
-          // Find matching country code
-          const matchedCode = commonCodes.find((code) =>
-            cleaned.startsWith(code)
-          );
-
-          if (matchedCode) {
-            country_code = matchedCode;
-            phone_number = cleaned.substring(matchedCode.length);
-          } else {
-            // Fallback: try 1-4 digit country codes
-            const match = cleaned.match(/^\+(\d{1,4})(\d{7,})$/);
-            if (match) {
-              country_code = `+${match[1]}`;
-              phone_number = match[2];
-            } else {
-              // Last resort: assume +XX format
-              country_code = cleaned.substring(0, 3);
-              phone_number = cleaned.substring(3);
-            }
-          }
-        } else {
-          // No + sign, assume it's just the phone number with default country code
-          country_code = "+91"; // Default to India
-          phone_number = cleaned;
-        }
+        // Parse whatsappNumber using selected country dial code to avoid duplicate country code
+        // react-phone-input-2 usually provides digits without '+' and includes dial code at the start
+        const digitsOnly = whatsappNumber.replace(/\D/g, "");
+        const dial = (countryDialCode || "91").replace(/\D/g, "");
+        const country_code = `+${dial}`;
+        const phone_number = digitsOnly.startsWith(dial)
+          ? digitsOnly.slice(dial.length)
+          : digitsOnly;
 
         // Call the API
         const response = await login({
@@ -446,7 +403,7 @@ const LandingPage: React.FC = () => {
       setUser(updatedUser);
 
       // Social logins are treated as a 'login' intent.
-      if (updatedUser.alerts.length > 0) {
+      if ((updatedUser.alerts?.length || 0) > 0) {
         navigate(PagePath.DASHBOARD);
       } else {
         startNewAlert();

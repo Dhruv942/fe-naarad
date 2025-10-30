@@ -92,11 +92,6 @@ const InterestSelectionPage: React.FC = () => {
   };
 
   const handleMainCategorySelect = (category: MainCategory) => {
-    // Prevent selection if category is coming soon or not ready
-    if (category.id === "youtube" || category.id === "custom") {
-      return;
-    }
-
     clearValidation();
     const isDeselecting = activeMainCategory === category.id;
 
@@ -123,8 +118,11 @@ const InterestSelectionPage: React.FC = () => {
           category.subCategories.length > 0
         ) {
           nextSectionId = `sub-category-section-${category.id}`;
-        } else if (category.tags && category.tags.length > 0) {
-          nextSectionId = `tags-section-${category.id}`;
+        } else if (
+          category.followUpQuestions &&
+          category.followUpQuestions.length > 0
+        ) {
+          nextSectionId = "follow-up-section";
         }
 
         if (nextSectionId) {
@@ -152,14 +150,14 @@ const InterestSelectionPage: React.FC = () => {
     clearValidation();
     const isDeselecting = activeSubCategory === subCategory.id;
     const isSwitching =
-      activeMainCategory === "sports" && activeSubCategory !== subCategory.id;
+      activeMainCategory && activeSubCategory !== subCategory.id;
 
     if (isSwitching && !isDeselecting) {
-      // Clear follow-up answers when switching between sports to prevent carrying over irrelevant data.
-      handleUpdateAlert((prev) => ({
-        ...prev,
-        sports: { ...prev.sports, followUpAnswers: {} },
-      }));
+      // Clear follow-up answers when switching between sub-categories to prevent carrying over irrelevant data.
+      handleUpdateAlert((prev) => {
+        const catKey = activeMainCategory as STCKType;
+        return { ...prev, [catKey]: { ...prev[catKey], followUpAnswers: {} } };
+      });
     }
 
     if (isDeselecting) {
@@ -182,12 +180,7 @@ const InterestSelectionPage: React.FC = () => {
       }
       // Auto-scroll on new selection
       setTimeout(() => {
-        if (subCategory.tags && subCategory.tags.length > 0) {
-          const nextSectionId = `tags-section-${subCategory.id}`;
-          document
-            .getElementById(nextSectionId)
-            ?.scrollIntoView({ behavior: "smooth", block: "center" });
-        } else if (
+        if (
           subCategory.followUpQuestions &&
           subCategory.followUpQuestions.length > 0
         ) {
@@ -225,22 +218,6 @@ const InterestSelectionPage: React.FC = () => {
         ? currentTags.filter((t) => t !== tagId)
         : [...currentTags, tagId];
 
-      if (categoryKey === "youtube") {
-        const durationSubCategory =
-          INTEREST_TAG_HIERARCHY.YOUTUBE.subCategories?.find(
-            (sc) => sc.id === "youtube_duration"
-          );
-        if (
-          durationSubCategory &&
-          durationSubCategory.tags.some((t) => t.id === tagId)
-        ) {
-          const otherDurationTagIds = durationSubCategory.tags
-            .map((t) => t.id)
-            .filter((id) => id !== tagId);
-          newTags = newTags.filter((t) => !otherDurationTagIds.includes(t));
-        }
-      }
-
       return {
         ...prev,
         [categoryKey]: {
@@ -257,12 +234,32 @@ const InterestSelectionPage: React.FC = () => {
     tagLabel: string
   ) => {
     clearValidation();
+
+    const mainCatData = mainCategoriesArray.find(
+      (cat) => cat.id === categoryKey
+    );
+    const subCatData = mainCatData?.subCategories?.find(
+      (sc) => sc.id === activeSubCategory
+    );
+    const allQuestions =
+      subCatData?.followUpQuestions || mainCatData?.followUpQuestions || [];
+    const question = allQuestions.find((q) => q.id === questionId);
+
+    // If a single-select tag is chosen, ensure the "Other" input is closed.
+    if (question?.isSingleSelect) {
+      const uniqueInputId = `${categoryKey}-${questionId}-other`;
+      if (activeOtherInput === uniqueInputId) {
+        setActiveOtherInput(null);
+      }
+    }
+
     if (tagLabel === "No Preference") {
       const uniqueInputId = `${categoryKey}-${questionId}-other`;
       if (activeOtherInput === uniqueInputId) {
         setActiveOtherInput(null);
       }
     }
+
     handleUpdateAlert((prev) => {
       const currentCategory = prev[categoryKey] as CategorySpecificPreferences;
       const currentAnswers = currentCategory.followUpAnswers || {};
@@ -275,7 +272,15 @@ const InterestSelectionPage: React.FC = () => {
       let newSelectedTags: string[];
       let newCustomAnswer = currentQuestionAnswer.customAnswerViaOther;
 
-      if (tagLabel === "No Preference") {
+      if (question?.isSingleSelect) {
+        newSelectedTags = currentlySelected.includes(tagLabel)
+          ? []
+          : [tagLabel];
+        if (newSelectedTags.length > 0) {
+          // if a tag was selected (not deselected)
+          newCustomAnswer = ""; // clear custom answer
+        }
+      } else if (tagLabel === "No Preference") {
         newSelectedTags = currentlySelected.includes("No Preference")
           ? []
           : ["No Preference"];
@@ -519,6 +524,11 @@ const InterestSelectionPage: React.FC = () => {
         ) || null
       : null;
 
+  const popularInstructions =
+    (currentSubCategoryData?.popularInstructionTags ||
+      currentMainCategoryData?.popularInstructionTags) ??
+    [];
+
   const questionsToRender =
     currentSubCategoryData?.followUpQuestions ||
     currentMainCategoryData?.followUpQuestions ||
@@ -559,13 +569,10 @@ const InterestSelectionPage: React.FC = () => {
         mainCatData.subCategories && mainCatData.subCategories.length > 0;
 
       if (hasSubCats && !activeSubCategory) {
-        errors[`sub-category-section-${mainCatData.id}`] =
-          `For ${mainCatData.label}, please select a specific sub-category.`;
+        errors[
+          `sub-category-section-${mainCatData.id}`
+        ] = `For ${mainCatData.label}, please select a specific sub-category.`;
       }
-
-      const catKey = mainCatData.id as STCKType;
-      const categoryPrefs = activeAlert[catKey];
-      const hasSelectedTags = categoryPrefs?.selectedTags?.length > 0;
 
       const isSports = mainCatData.id === "sports";
       const isOtherSportSelected =
@@ -573,21 +580,13 @@ const InterestSelectionPage: React.FC = () => {
       const otherSportNameIsSet =
         isSports && !!activeAlert.sports.otherSportName?.trim();
 
-      const tagsSectionId = `tags-section-${activeSubCategory || mainCatData.id}`;
-
-      if (activeSubCategory || !hasSubCats) {
-        if (isOtherSportSelected && !otherSportNameIsSet) {
-          errors["other-sport-input-section"] =
-            `Please specify the name of the 'Other Sport'.`;
-        } else if (!isOtherSportSelected && !hasSelectedTags) {
-          const subCatLabel = mainCatData.subCategories?.find(
-            (sc) => sc.id === activeSubCategory
-          )?.label;
-          errors[tagsSectionId] =
-            `Please select at least one interest tag for ${subCatLabel || mainCatData.label}.`;
-        }
+      if (isOtherSportSelected && !otherSportNameIsSet) {
+        errors[
+          "other-sport-input-section"
+        ] = `Please specify the name of the 'Other Sport'.`;
       }
 
+      const catKey = mainCatData.id as STCKType;
       const subCatDataForValidation = mainCatData.subCategories?.find(
         (sc) => sc.id === activeSubCategory
       );
@@ -618,8 +617,9 @@ const InterestSelectionPage: React.FC = () => {
           }
         }
         if (!hasAtLeastOneAnswer) {
-          errors["follow-up-section"] =
-            `For ${subCatDataForValidation?.label || mainCatData.label}, please answer at least one follow-up question to continue.`;
+          errors["follow-up-section"] = `For ${
+            subCatDataForValidation?.label || mainCatData.label
+          }, please answer at least one follow-up question to continue.`;
         }
       }
     }
@@ -628,29 +628,6 @@ const InterestSelectionPage: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    // If user typed a custom instruction but didn't press Add, include it now
-    if (
-      currentMainCategoryData &&
-      currentMainCategoryData.id !== "custom" &&
-      newInstructionTag.trim()
-    ) {
-      const catKey = currentMainCategoryData.id as STCKType;
-      handleUpdateAlert((prev) => {
-        const currentCategory = prev[catKey] as CategorySpecificPreferences;
-        const existing = currentCategory.instructionTags || [];
-        const trimmed = newInstructionTag.trim();
-        if (existing.includes(trimmed)) return prev;
-        return {
-          ...prev,
-          [catKey]: {
-            ...currentCategory,
-            instructionTags: [...existing, trimmed],
-          },
-        };
-      });
-      setNewInstructionTag("");
-    }
-
     setHasAttemptedSubmit(true);
     const errors = validateSelections();
     setValidationErrors(errors);
@@ -714,51 +691,40 @@ const InterestSelectionPage: React.FC = () => {
                 message={validationErrors["main-category-section"]}
               />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {mainCategoriesArray.map((category) => {
-                  const isDisabled =
-                    category.id === "youtube" || category.id === "custom";
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => handleMainCategorySelect(category)}
-                      disabled={isDisabled}
-                      className={`p-5 md:p-6 rounded-xl shadow-lg transition-all duration-300 ease-in-out focus:outline-none
-                        ${
-                          isDisabled
-                            ? "bg-gray-600/30 text-gray-400 cursor-not-allowed opacity-50"
-                            : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
-                                activeMainCategory === category.id
-                                  ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
-                                  : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
-                              }`
-                        }
-                      `}
-                      aria-pressed={activeMainCategory === category.id}
-                      aria-disabled={isDisabled}
-                    >
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <span className="text-4xl md:text-5xl">
-                          {category.icon}
-                        </span>
-                        <span className="text-md md:text-lg font-semibold tracking-wide">
-                          {category.label}
-                          {isDisabled && (
-                            <span className="block text-xs mt-1">
-                              (Coming Soon)
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                {mainCategoriesArray.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => handleMainCategorySelect(category)}
+                    className={`p-5 md:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1.5 focus:outline-none focus:ring-4 
+                      ${
+                        activeMainCategory === category.id
+                          ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
+                          : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
+                      }
+                    `}
+                    aria-pressed={activeMainCategory === category.id}
+                  >
+                    <div className="flex flex-col items-center justify-center space-y-3">
+                      <span className="text-4xl md:text-5xl">
+                        {category.icon}
+                      </span>
+                      <span className="text-md md:text-lg font-semibold tracking-wide">
+                        {category.label}
+                      </span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </section>
 
             {/* --- Section 2: Details --- */}
             {currentMainCategoryData && (
               <section
-                className={`p-6 bg-white/10 rounded-xl shadow-lg transition-all duration-500 ease-in-out ${activeMainCategory ? "opacity-100 max-h-[9000px]" : "opacity-0 max-h-0 overflow-hidden"}`}
+                className={`p-6 bg-white/10 rounded-xl shadow-lg transition-all duration-500 ease-in-out ${
+                  activeMainCategory
+                    ? "opacity-100 max-h-[9000px]"
+                    : "opacity-0 max-h-0 overflow-hidden"
+                }`}
               >
                 {currentMainCategoryData.id !== "custom" ? (
                   <>
@@ -834,9 +800,11 @@ const InterestSelectionPage: React.FC = () => {
                         </div>
                       )}
                     <div
-                      id={`tags-section-${activeSubCategory || currentMainCategoryData?.id}`}
+                      id={`tags-section-${
+                        activeSubCategory || currentMainCategoryData?.id
+                      }`}
                     >
-                      {(currentSubCategoryData &&
+                      {(currentSubCategoryData?.tags &&
                         currentSubCategoryData.tags.length > 0) ||
                       (currentMainCategoryData.tags &&
                         currentMainCategoryData.tags.length > 0 &&
@@ -850,7 +818,10 @@ const InterestSelectionPage: React.FC = () => {
                           <ValidationError
                             message={
                               validationErrors[
-                                `tags-section-${activeSubCategory || currentMainCategoryData.id}`
+                                `tags-section-${
+                                  activeSubCategory ||
+                                  currentMainCategoryData.id
+                                }`
                               ]
                             }
                           />
@@ -883,13 +854,6 @@ const InterestSelectionPage: React.FC = () => {
                             ))}
                           </div>
                         </div>
-                      ) : activeSubCategory &&
-                        (!currentSubCategoryData ||
-                          currentSubCategoryData.tags.length === 0) &&
-                        activeSubCategory !== "sports_other" ? (
-                        <p className="text-primary-lighter/70 italic">
-                          No specific tags for {currentSubCategoryData?.label}.
-                        </p>
                       ) : null}
                     </div>
                     {showFollowUpQuestions && (
@@ -962,7 +926,9 @@ const InterestSelectionPage: React.FC = () => {
                               };
                               const allDisplayTags = [
                                 ...dynamicPredefinedTags,
-                                noPreferenceTag,
+                                ...(!question.isSingleSelect
+                                  ? [noPreferenceTag]
+                                  : []),
                               ];
 
                               return (
@@ -1067,46 +1033,43 @@ const InterestSelectionPage: React.FC = () => {
                           <span
                             className={`font-bold text-${currentMainCategoryData.color}`}
                           >
-                            {currentMainCategoryData.label}
+                            {currentSubCategoryData?.label ||
+                              currentMainCategoryData.label}
                           </span>{" "}
                           (as Tags):
                         </span>
                       </h3>
-                      {currentMainCategoryData.popularInstructionTags &&
-                        currentMainCategoryData.popularInstructionTags.length >
-                          0 && (
-                          <>
-                            <p className="text-sm text-primary-lighter/70 mb-3 ml-8">
-                              Suggested instructions (tap to add/remove):
-                            </p>
-                            <div className="flex flex-wrap gap-3 mb-5 ml-8">
-                              {currentMainCategoryData.popularInstructionTags.map(
-                                (tag) => (
-                                  <TagButton
-                                    key={tag.id}
-                                    label={tag.label}
-                                    icon={tag.icon || ICONS.TAG}
-                                    isSelected={(
-                                      activeAlert[
-                                        currentMainCategoryData.id as STCKType
-                                      ]?.instructionTags || []
-                                    ).includes(tag.label)}
-                                    onClick={() =>
-                                      handlePopularInstructionTagClick(
-                                        currentMainCategoryData.id as STCKType,
-                                        tag.label
-                                      )
-                                    }
-                                    color="bg-gray-600/50 hover:bg-gray-600/70"
-                                    textColor="text-gray-100"
-                                    selectedColor={`bg-${currentMainCategoryData.color}`}
-                                    selectedTextColor={`text-${currentMainCategoryData.textColor}`}
-                                  />
-                                )
-                              )}
-                            </div>
-                          </>
-                        )}
+                      {popularInstructions.length > 0 && (
+                        <>
+                          <p className="text-sm text-primary-lighter/70 mb-3 ml-8">
+                            Suggested instructions (tap to add/remove):
+                          </p>
+                          <div className="flex flex-wrap gap-3 mb-5 ml-8">
+                            {popularInstructions.map((tag) => (
+                              <TagButton
+                                key={tag.id}
+                                label={tag.label}
+                                icon={tag.icon || ICONS.TAG}
+                                isSelected={(
+                                  activeAlert[
+                                    currentMainCategoryData.id as STCKType
+                                  ]?.instructionTags || []
+                                ).includes(tag.label)}
+                                onClick={() =>
+                                  handlePopularInstructionTagClick(
+                                    currentMainCategoryData.id as STCKType,
+                                    tag.label
+                                  )
+                                }
+                                color="bg-gray-600/50 hover:bg-gray-600/70"
+                                textColor="text-gray-100"
+                                selectedColor={`bg-${currentMainCategoryData.color}`}
+                                selectedTextColor={`text-${currentMainCategoryData.textColor}`}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      )}
                       <p className="text-sm text-primary-lighter/70 mb-2 ml-8">
                         Your custom instructions:
                       </p>

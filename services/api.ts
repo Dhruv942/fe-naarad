@@ -250,9 +250,15 @@ export const getAlertsByUserId = async (
       };
     }
 
+    const normalizedAlerts = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.alerts)
+      ? result.alerts
+      : [];
+
     return {
       success: true,
-      alerts: result.alerts || result,
+      alerts: normalizedAlerts,
     };
   } catch (error) {
     console.error("❌ Error fetching alerts:", error);
