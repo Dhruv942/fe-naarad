@@ -168,18 +168,20 @@ export interface FollowUpQuestion {
   text: string;
   predefinedAnswerTags?: Tag[];
   hasOtherOption?: boolean;
-  helperText?: string; // Optional: can still be used for overarching guidance
+  helperText?: string;
+  isSingleSelect?: boolean;
 }
 
 export interface SubCategory {
   id: string;
   label: string;
   icon?: string | React.ReactNode;
-  tags: Tag[];
+  tags?: Tag[]; // Now optional, especially for News
   description?: string;
   popularTeams?: Tag[]; // For Sports
   popularPlayers?: Tag[]; // For Sports
   followUpQuestions?: FollowUpQuestion[]; // Moved here for context-specific questions
+  popularInstructionTags?: Tag[]; // Now can be at sub-category level
 }
 
 export interface MainCategory {
@@ -202,31 +204,11 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
     icon: ICONS.SPORTS,
     color: "accent-orange",
     textColor: "text-white",
-    popularInstructionTags: [
-      { id: "sports_instr_winonly", label: "Notify on wins only (my team)" },
-      { id: "sports_instr_scores", label: "Include final scores" },
-      { id: "sports_instr_noplayergossip", label: "No player gossip/rumors" },
-      { id: "sports_instr_highlights", label: "Prefer highlights links" },
-      { id: "sports_instr_transfers", label: "Include transfer news" },
-      { id: "sports_instr_nobetting", label: "No betting odds or content" },
-      {
-        id: "sports_instr_nationalfocus",
-        label: "Focus on my country's athletes",
-      },
-    ],
     subCategories: [
       {
         id: "sports_cricket",
         label: "Cricket",
         icon: "🏏",
-        tags: [
-          { id: "cricket_ipl", label: "IPL" },
-          { id: "cricket_t20wc", label: "T20 World Cup" },
-          { id: "cricket_test", label: "Test Matches" },
-          { id: "cricket_odi", label: "ODI Matches" },
-          { id: "cricket_ashes", label: "The Ashes" },
-          { id: "cricket_bbl", label: "Big Bash League" },
-        ],
         popularTeams: [
           { id: "cricket_team_rcb", label: "Royal Challengers Bengaluru" },
           { id: "cricket_team_mi", label: "Mumbai Indians" },
@@ -255,30 +237,35 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             hasOtherOption: true,
           },
           {
-            id: "cricket_matchFormat",
-            text: "Which match formats are you interested in?",
+            id: "cricket_leagues",
+            text: "Which leagues or tournaments catch your eye?",
             predefinedAnswerTags: [
-              { id: "format_test", label: "Test Matches" },
-              { id: "format_odi", label: "ODI" },
-              { id: "format_t20", label: "T20" },
+              { id: "cricket_ipl", label: "IPL" },
+              { id: "cricket_t20wc", label: "T20 World Cup" },
+              { id: "cricket_test", label: "Test Matches" },
+              { id: "cricket_odi", label: "ODI World Cup" },
             ],
             hasOtherOption: true,
           },
+        ],
+        popularInstructionTags: [
+          {
+            id: "cricket_instr_winsonly",
+            label: "Notify on wins only (my team)",
+          },
+          { id: "cricket_instr_scores", label: "Include final scores" },
+          {
+            id: "cricket_instr_milestones",
+            label: "Alerts on milestones (100s, 5-fers)",
+          },
+          { id: "cricket_instr_nogossip", label: "No player gossip/rumors" },
+          { id: "cricket_instr_highlights", label: "Prefer highlights links" },
         ],
       },
       {
         id: "sports_football",
         label: "Football (Soccer)",
         icon: "⚽",
-        tags: [
-          { id: "football_epl", label: "Premier League" },
-          { id: "football_laliga", label: "La Liga" },
-          { id: "football_seriea", label: "Serie A" },
-          { id: "football_bundesliga", label: "Bundesliga" },
-          { id: "football_ucl", label: "Champions League" },
-          { id: "football_worldcup", label: "FIFA World Cup" },
-          { id: "football_isl", label: "Indian Super League (ISL)" },
-        ],
         popularTeams: [
           { id: "football_team_mu", label: "Manchester United" },
           { id: "football_team_rm", label: "Real Madrid" },
@@ -321,17 +308,24 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             hasOtherOption: true,
           },
         ],
+        popularInstructionTags: [
+          {
+            id: "football_instr_winsonly",
+            label: "Notify on wins only (my team)",
+          },
+          { id: "football_instr_scores", label: "Include final scores" },
+          { id: "football_instr_transfers", label: "Focus on transfer news" },
+          { id: "football_instr_redcards", label: "Alerts on red cards" },
+          {
+            id: "football_instr_startinglineup",
+            label: "Send starting lineup news",
+          },
+        ],
       },
       {
         id: "sports_basketball",
         label: "Basketball",
         icon: "🏀",
-        tags: [
-          { id: "bball_nba", label: "NBA" },
-          { id: "bball_euroleague", label: "EuroLeague" },
-          { id: "bball_wnba", label: "WNBA" },
-          { id: "bball_fibawc", label: "FIBA World Cup" },
-        ],
         popularTeams: [
           { id: "bball_team_lakers", label: "Los Angeles Lakers" },
           { id: "bball_team_warriors", label: "Golden State Warriors" },
@@ -355,21 +349,27 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             text: "Any favorite basketball players you follow closely?",
             hasOtherOption: true,
           },
+          {
+            id: "bball_contentType",
+            text: "Besides the scores, what kind of basketball content are you into?",
+            predefinedAnswerTags: [
+              { id: "bball_content_highlights", label: "Game Highlights" },
+              { id: "bball_content_interviews", label: "Player Interviews" },
+              { id: "bball_content_trades", label: "Trade Rumors" },
+              { id: "bball_content_analysis", label: "Deep Analysis" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "bball_instr_closegame", label: "Alert for close games" },
+          { id: "bball_instr_stats", label: "Include player stats" },
+          { id: "bball_instr_notrades", label: "No trade rumors" },
         ],
       },
       {
         id: "sports_tennis",
         label: "Tennis",
         icon: "🎾",
-        tags: [
-          { id: "tennis_grandslam", label: "Grand Slams" },
-          { id: "tennis_wimbledon", label: "Wimbledon" },
-          { id: "tennis_usopen", label: "US Open" },
-          { id: "tennis_ausopen", label: "Australian Open" },
-          { id: "tennis_frenchopen", label: "French Open (Roland Garros)" },
-          { id: "tennis_atp", label: "ATP Tour" },
-          { id: "tennis_wta", label: "WTA Tour" },
-        ],
         popularPlayers: [
           { id: "tennis_player_djokovic", label: "Novak Djokovic" },
           { id: "tennis_player_nadal", label: "Rafael Nadal" },
@@ -394,18 +394,32 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "tennis_all", label: "All major events" },
             ],
           },
+          {
+            id: "tennis_matchFocus",
+            text: "When a match happens, what's the most important thing for me to tell you?",
+            predefinedAnswerTags: [
+              { id: "tennis_focus_score", label: "Just the final score" },
+              {
+                id: "tennis_focus_moments",
+                label: "Key moments (e.g., break points)",
+              },
+              { id: "tennis_focus_summary", label: "Full match summary" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "tennis_instr_upsets", label: "Alert on major upsets" },
+          { id: "tennis_instr_tiebreaks", label: "Notify on tie-breaks" },
+          {
+            id: "tennis_instr_mycountry",
+            label: "Focus on my country's players",
+          },
         ],
       },
       {
         id: "sports_f1",
         label: "Formula 1",
         icon: "🏎️",
-        tags: [
-          { id: "f1_races", label: "Race Weekends" },
-          { id: "f1_qualifying", label: "Qualifying Results" },
-          { id: "f1_constructors", label: "Constructors Championship" },
-          { id: "f1_drivers", label: "Drivers Championship" },
-        ],
         popularTeams: [
           { id: "f1_team_mercedes", label: "Mercedes-AMG Petronas" },
           { id: "f1_team_redbull", label: "Oracle Red Bull Racing" },
@@ -440,20 +454,19 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             ],
           },
         ],
+        popularInstructionTags: [
+          { id: "f1_instr_overtakes", label: "Highlight key overtakes" },
+          {
+            id: "f1_instr_safetycar",
+            label: "Notify on safety car deployment",
+          },
+          { id: "f1_instr_qualyonly", label: "Only qualifying & race results" },
+        ],
       },
       {
         id: "sports_golf",
         label: "Golf",
         icon: "⛳",
-        tags: [
-          {
-            id: "golf_majors",
-            label: "Majors (Masters, PGA, US Open, The Open)",
-          },
-          { id: "golf_pgatour", label: "PGA Tour" },
-          { id: "golf_liv", label: "LIV Golf" },
-          { id: "golf_rydercup", label: "Ryder Cup" },
-        ],
         popularPlayers: [
           { id: "golf_player_woods", label: "Tiger Woods" },
           { id: "golf_player_scheffler", label: "Scottie Scheffler" },
@@ -466,17 +479,37 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             text: "Any favorite golfers you follow closely?",
             hasOtherOption: true,
           },
+          {
+            id: "golf_tours",
+            text: "Which professional tours do you follow?",
+            predefinedAnswerTags: [
+              { id: "golf_tour_pga", label: "PGA Tour" },
+              { id: "golf_tour_liv", label: "LIV Golf" },
+              { id: "golf_tour_lpga", label: "LPGA Tour (Womens)" },
+              { id: "golf_tour_euro", label: "European Tour" },
+            ],
+          },
+          {
+            id: "golf_updateType",
+            text: "During a tournament, what kind of updates are most exciting for you?",
+            predefinedAnswerTags: [
+              { id: "golf_update_summary", label: "End-of-day summaries" },
+              { id: "golf_update_holeinone", label: "Hole-in-one alerts" },
+              { id: "golf_update_leader", label: "Leader changes" },
+              { id: "golf_update_favs", label: "My favorite players only" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "golf_instr_leaderboard", label: "Leaderboard updates only" },
+          { id: "golf_instr_majorsonly", label: "Majors only" },
+          { id: "golf_instr_finalround", label: "Final round updates only" },
         ],
       },
       {
         id: "sports_badminton",
         label: "Badminton",
         icon: "🏸",
-        tags: [
-          { id: "badminton_bwf", label: "BWF World Tour" },
-          { id: "badminton_olympics", label: "Olympics Badminton" },
-          { id: "badminton_nationals", label: "National Championships" },
-        ],
         popularPlayers: [
           { id: "badminton_player_pvsindhu", label: "PV Sindhu" },
           { id: "badminton_player_lsen", label: "Lakshya Sen" },
@@ -489,16 +522,47 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             text: "Any favorite badminton players you follow closely?",
             hasOtherOption: true,
           },
+          {
+            id: "badminton_tournaments",
+            text: "Which tournaments are a must-watch for you?",
+            predefinedAnswerTags: [
+              { id: "badminton_tourn_olympics", label: "Olympics" },
+              { id: "badminton_tourn_bwf", label: "BWF World Championships" },
+              { id: "badminton_tourn_allengland", label: "All England Open" },
+              { id: "badminton_tourn_thomasuber", label: "Thomas & Uber Cup" },
+            ],
+          },
+          {
+            id: "badminton_newsType",
+            text: "Beyond who won, what badminton news interests you most?",
+            predefinedAnswerTags: [
+              {
+                id: "badminton_news_rankings",
+                label: "Player ranking changes",
+              },
+              {
+                id: "badminton_news_schedules",
+                label: "Upcoming match schedules",
+              },
+              {
+                id: "badminton_news_indian",
+                label: "News about Indian players",
+              },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          {
+            id: "badminton_instr_mycountry",
+            label: "Focus on my country's players",
+          },
+          { id: "badminton_instr_finals", label: "Finals only" },
         ],
       },
       {
         id: "sports_kabaddi",
         label: "Kabaddi",
         icon: "🤸",
-        tags: [
-          { id: "kabaddi_pkl", label: "Pro Kabaddi League (PKL)" },
-          { id: "kabaddi_worldcup", label: "Kabaddi World Cup" },
-        ],
         popularTeams: [
           { id: "kabaddi_team_patna", label: "Patna Pirates" },
           { id: "kabaddi_team_bengaluru", label: "Bengaluru Bulls" },
@@ -519,18 +583,72 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
             text: "Any favorite kabaddi players you follow closely?",
             hasOtherOption: true,
           },
+          {
+            id: "kabaddi_leagues",
+            text: "Which Kabaddi action are you tracking?",
+            predefinedAnswerTags: [
+              { id: "kabaddi_league_pkl", label: "Pro Kabaddi League (PKL)" },
+              {
+                id: "kabaddi_league_international",
+                label: "International Matches",
+              },
+              { id: "kabaddi_league_super", label: "Super Kabaddi League" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "kabaddi_instr_superraid", label: "Notify on Super Raids" },
+          { id: "kabaddi_instr_winsonly", label: "Wins only" },
         ],
       },
       {
         id: "sports_esports",
         label: "eSports",
         icon: "🎮",
-        tags: [
-          { id: "esports_valorant", label: "Valorant" },
-          { id: "esports_csgo", label: "Counter-Strike" },
-          { id: "esports_dota2", label: "Dota 2" },
-          { id: "esports_lol", label: "League of Legends" },
-          { id: "esports_bgmi", label: "BGMI (India)" },
+        followUpQuestions: [
+          {
+            id: "esports_games",
+            text: "Which games do you follow?",
+            predefinedAnswerTags: [
+              { id: "esports_valorant", label: "Valorant" },
+              { id: "esports_csgo", label: "Counter-Strike" },
+              { id: "esports_dota2", label: "Dota 2" },
+              { id: "esports_lol", label: "League of Legends" },
+              { id: "esports_bgmi", label: "BGMI (India)" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "esports_teamsRegions",
+            text: "Any specific teams or regions you root for?",
+            predefinedAnswerTags: [
+              { id: "esports_region_na", label: "North America (NA)" },
+              { id: "esports_region_eu", label: "Europe (EU)" },
+              { id: "esports_region_asia", label: "Asia" },
+              { id: "esports_region_in", label: "India" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "esports_newsType",
+            text: "What kind of eSports news gets you hyped?",
+            predefinedAnswerTags: [
+              { id: "esports_news_results", label: "Tournament results" },
+              {
+                id: "esports_news_roster",
+                label: "Roster updates & team news",
+              },
+              {
+                id: "esports_news_patches",
+                label: "Major game updates/patches",
+              },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "esports_instr_roster", label: "Roster changes" },
+          { id: "esports_instr_majors", label: "Majors only" },
+          { id: "esports_instr_twitch", label: "Link to Twitch streams" },
         ],
       },
       {
@@ -549,127 +667,255 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
     icon: ICONS.MOVIES,
     color: "accent-purple",
     textColor: "text-white",
-    popularInstructionTags: [
-      {
-        id: "moviestv_instr_nospoilers",
-        label: "No spoilers for new releases",
-      },
-      { id: "moviestv_instr_ratings", label: "Include Rotten Tomatoes score" },
-      {
-        id: "moviestv_instr_streamingonly",
-        label: "Alerts for streaming availability only",
-      },
-      { id: "moviestv_instr_trailers", label: "Include trailers" },
-      { id: "moviestv_instr_criticreviews", label: "Prefer critic reviews" },
-      {
-        id: "moviestv_instr_awardseason",
-        label: "Focus on award seasons (Oscars, etc.)",
-      },
-      {
-        id: "moviestv_instr_interviews",
-        label: "Include cast/director interviews",
-      },
-    ],
     subCategories: [
       {
-        id: "moviestv_genres",
-        label: "Genres",
-        icon: "🎭",
-        tags: [
-          { id: "genre_action", label: "Action" },
-          { id: "genre_comedy", label: "Comedy" },
-          { id: "genre_drama", label: "Drama" },
-          { id: "genre_scifi", label: "Sci-Fi" },
-          { id: "genre_horror", label: "Horror" },
-          { id: "genre_docu", label: "Documentary" },
-          { id: "genre_romance", label: "Romance" },
-          { id: "genre_thriller", label: "Thriller" },
-          { id: "genre_animation", label: "Animation" },
-          { id: "genre_family", label: "Family" },
-        ],
-      },
-      {
-        id: "moviestv_platforms",
-        label: "Streaming Platforms",
-        icon: "📺",
-        tags: [
-          { id: "platform_netflix", label: "Netflix" },
-          { id: "platform_prime", label: "Amazon Prime" },
-          { id: "platform_disney", label: "Disney+" },
-          { id: "platform_hbo", label: "HBO Max/Max" },
-          { id: "platform_apple", label: "Apple TV+" },
-          { id: "platform_hotstar", label: "Hotstar (India)" },
-          { id: "platform_sonyliv", label: "SonyLIV (India)" },
-          { id: "platform_zee5", label: "ZEE5 (India)" },
-        ],
-      },
-      {
-        id: "moviestv_actors",
-        label: "Favorite Actors/Directors",
-        icon: ICONS.USER,
-        tags: [
-          { id: "actor_dicaprio", label: "Leonardo DiCaprio" },
-          { id: "actor_zendaya", label: "Zendaya" },
-          { id: "director_nolan", label: "Christopher Nolan" },
-          { id: "actor_srk", label: "Shah Rukh Khan" },
-          { id: "actor_amitabh", label: "Amitabh Bachchan" },
-          { id: "actor_alia", label: "Alia Bhatt" },
-        ],
-      },
-    ],
-    followUpQuestions: [
-      {
-        id: "contentFormat",
-        text: "How do you prefer to discover new content?",
-        predefinedAnswerTags: [
-          { id: "discover_trailers", label: "Trailers" },
-          { id: "discover_reviews", label: "Reviews" },
+        id: "moviestv_hollywood",
+        label: "Hollywood",
+        icon: "🎬",
+        popularInstructionTags: [
           {
-            id: "discover_recommendations",
-            label: "Recommendations based on my taste",
+            id: "moviestv_instr_nospoilers",
+            label: "No spoilers for new releases",
           },
-          { id: "discover_news", label: "Industry News/Announcements" },
+          {
+            id: "moviestv_instr_ratings",
+            label: "Include Rotten Tomatoes score",
+          },
+          {
+            id: "moviestv_instr_streamingonly",
+            label: "Alerts for streaming availability only",
+          },
+          {
+            id: "moviestv_instr_awardseason",
+            label: "Focus on award seasons (Oscars, etc.)",
+          },
         ],
-        hasOtherOption: true,
+        followUpQuestions: [
+          {
+            id: "hollywood_genres",
+            text: "Which Hollywood genres are your go-to?",
+            predefinedAnswerTags: [
+              { id: "genre_action", label: "Action" },
+              { id: "genre_comedy", label: "Comedy" },
+              { id: "genre_drama", label: "Drama" },
+              { id: "genre_scifi", label: "Sci-Fi" },
+              { id: "genre_horror", label: "Horror" },
+              { id: "genre_thriller", label: "Thriller" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "hollywood_favs",
+            text: "Any favorite actors or directors I should track for you?",
+            hasOtherOption: true,
+          },
+          {
+            id: "releaseAlerts",
+            text: "When should we notify you about new releases?",
+            predefinedAnswerTags: [
+              { id: "release_theatrical", label: "Theatrical Release" },
+              { id: "release_streaming", label: "When it hits Streaming" },
+              { id: "release_both", label: "Both Theatrical & Streaming" },
+            ],
+          },
+        ],
       },
       {
-        id: "releaseAlerts",
-        text: "When should we notify you about new releases?",
-        predefinedAnswerTags: [
-          { id: "release_theatrical", label: "Theatrical Release" },
-          { id: "release_streaming", label: "When it hits Streaming" },
-          { id: "release_both", label: "Both Theatrical & Streaming" },
-          { id: "release_preorders", label: "Pre-order / Early Access" },
+        id: "moviestv_bollywood",
+        label: "Bollywood",
+        icon: "🕺",
+        popularInstructionTags: [
+          { id: "bollywood_instr_nospoilers", label: "No spoilers!" },
+          { id: "bollywood_instr_music", label: "Include music releases" },
+          {
+            id: "bollywood_instr_boxoffice",
+            label: "Include box office numbers",
+          },
+          {
+            id: "bollywood_instr_interviews",
+            label: "Cast & director interviews",
+          },
+        ],
+        followUpQuestions: [
+          {
+            id: "bollywood_genres",
+            text: "What kind of Bollywood movies do you enjoy?",
+            predefinedAnswerTags: [
+              { id: "bwood_genre_masala", label: "Masala / Action" },
+              { id: "bwood_genre_romcom", label: "Rom-Com" },
+              { id: "bwood_genre_drama", label: "Drama" },
+              { id: "bwood_genre_thriller", label: "Thriller/Crime" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "bollywood_favs",
+            text: "Any favorite actors or directors in Bollywood?",
+            hasOtherOption: true,
+          },
+          {
+            id: "bollywood_music",
+            text: "How important is the music for you?",
+            predefinedAnswerTags: [
+              {
+                id: "bwood_music_very",
+                label: "Very important, send album news",
+              },
+              {
+                id: "bwood_music_somewhat",
+                label: "Just the hit songs are fine",
+              },
+              { id: "bwood_music_not", label: "Not important" },
+            ],
+          },
         ],
       },
       {
-        id: "spoilerSensitivity",
-        text: "How sensitive are you to spoilers?",
-        predefinedAnswerTags: [
-          { id: "spoiler_avoid", label: "Avoid All Spoilers!" },
-          { id: "spoiler_minorOk", label: "Minor Spoilers are OK" },
-          { id: "spoiler_dontCare", label: "Don't Mind Spoilers" },
+        id: "moviestv_regional",
+        label: "Regional Cinema",
+        icon: "🗺️",
+        popularInstructionTags: [
+          {
+            id: "regional_instr_subtitles",
+            label: "Info on subtitle availability",
+          },
+          {
+            id: "regional_instr_original_lang",
+            label: "Original language only",
+          },
+          { id: "regional_instr_remakes", label: "News about remakes" },
         ],
-        hasOtherOption: true, // e.g. "Only for specific shows"
+        followUpQuestions: [
+          {
+            id: "regional_lang",
+            text: "Which regional languages are you interested in?",
+            predefinedAnswerTags: [
+              { id: "lang_tamil", label: "Tamil" },
+              { id: "lang_telugu", label: "Telugu" },
+              { id: "lang_malayalam", label: "Malayalam" },
+              { id: "lang_kannada", label: "Kannada" },
+              { id: "lang_bengali", label: "Bengali" },
+              { id: "lang_marathi", label: "Marathi" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "regional_genres",
+            text: "What's your go-to genre in regional cinema?",
+            predefinedAnswerTags: [
+              { id: "regional_genre_action", label: "Action / Masala" },
+              { id: "regional_genre_drama", label: "Drama / Arthouse" },
+              { id: "regional_genre_comedy", label: "Comedy" },
+              { id: "regional_genre_thriller", label: "Thriller" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "regional_favs",
+            text: "Any favorite actors or directors I should track for you in regional cinema?",
+            hasOtherOption: true,
+          },
+        ],
       },
       {
-        id: "languagePreference",
-        text: "Any language preferences for movies/shows?",
-        predefinedAnswerTags: [
-          { id: "lang_english", label: "English" },
-          { id: "lang_hindi", label: "Hindi" },
-          { id: "lang_regional", label: "My Regional Language (Specify)" },
-          { id: "lang_originalaudio", label: "Original Audio with Subtitles" },
+        id: "moviestv_tv",
+        label: "TV Shows & Series",
+        icon: "📺",
+        popularInstructionTags: [
+          { id: "tv_instr_nospoilers_ep", label: "No episode spoilers" },
+          { id: "tv_instr_newseason", label: "Alert for new seasons only" },
+          { id: "tv_instr_binge", label: "Suggest binge-worthy shows" },
+          { id: "tv_instr_weekly", label: "Reminders for weekly episodes" },
         ],
-        hasOtherOption: true,
+        followUpQuestions: [
+          {
+            id: "tv_platforms",
+            text: "Which streaming platforms do you use?",
+            predefinedAnswerTags: [
+              { id: "platform_netflix", label: "Netflix" },
+              { id: "platform_prime", label: "Amazon Prime" },
+              { id: "platform_disney", label: "Disney+" },
+              { id: "platform_hotstar", label: "Hotstar (India)" },
+              { id: "platform_sonyliv", label: "SonyLIV (India)" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "tv_genres",
+            text: "What genre of shows are you into?",
+            predefinedAnswerTags: [
+              { id: "tv_genre_sitcom", label: "Sitcom" },
+              { id: "tv_genre_drama", label: "Drama" },
+              { id: "tv_genre_crime", label: "Crime/Thriller" },
+              { id: "tv_genre_fantasy", label: "Fantasy/Sci-Fi" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "tv_showStatus",
+            text: "What's your current watching style?",
+            predefinedAnswerTags: [
+              {
+                id: "tv_style_new",
+                label: "Brand new, currently airing shows",
+              },
+              { id: "tv_style_binge", label: "Completed, binge-worthy series" },
+              {
+                id: "tv_style_classic",
+                label: "Critically-acclaimed classics",
+              },
+            ],
+          },
+        ],
       },
       {
-        id: "contentSource",
-        text: "Do you prefer mainstream hits or indie gems?",
-        predefinedAnswerTags: [
-          { id: "source_mainstream", label: "Mainstream Hits" },
-          { id: "source_indie", label: "Indie & Arthouse" },
-          { id: "source_both", label: "A Mix of Both" },
+        id: "moviestv_docs",
+        label: "Documentaries",
+        icon: "🌍",
+        popularInstructionTags: [
+          { id: "docs_instr_deepdive", label: "Prefer deep-dive series" },
+          { id: "docs_instr_biography", label: "Biographies are great" },
+          {
+            id: "docs_instr_investigative",
+            label: "Investigative journalism focus",
+          },
+        ],
+        followUpQuestions: [
+          {
+            id: "docs_topics",
+            text: "What documentary topics fascinate you?",
+            predefinedAnswerTags: [
+              { id: "docs_topic_nature", label: "Nature & Wildlife" },
+              { id: "docs_topic_history", label: "History" },
+              { id: "docs_topic_crime", label: "True Crime" },
+              { id: "docs_topic_science", label: "Science & Tech" },
+              { id: "docs_topic_sports", label: "Sports" },
+            ],
+            hasOtherOption: true,
+          },
+          {
+            id: "docs_format",
+            text: "How do you like your documentaries served?",
+            predefinedAnswerTags: [
+              { id: "docs_format_film", label: "Feature-length films" },
+              { id: "docs_format_series", label: "Multi-part docuseries" },
+              {
+                id: "docs_format_short",
+                label: "Short documentaries (< 40 mins)",
+              },
+            ],
+          },
+          {
+            id: "docs_platforms",
+            text: "Where do you usually watch documentaries?",
+            predefinedAnswerTags: [
+              { id: "docs_platform_netflix", label: "Netflix" },
+              { id: "docs_platform_youtube", label: "YouTube" },
+              { id: "docs_platform_curiosity", label: "CuriosityStream" },
+              { id: "docs_platform_nebula", label: "Nebula" },
+            ],
+            hasOtherOption: true,
+          },
         ],
       },
     ],
@@ -680,158 +926,413 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
     icon: ICONS.NEWS,
     color: "accent-blue",
     textColor: "text-white",
-    popularInstructionTags: [
-      { id: "news_instr_summaries", label: "Prefer short summaries" },
-      { id: "news_instr_fullarticles", label: "Link to full articles" },
-      { id: "news_instr_positive", label: "Focus on positive news" },
-      { id: "news_instr_nopolitics", label: "No political news" },
-      {
-        id: "news_instr_multisource",
-        label: "Provide multiple sources if possible",
-      },
-      { id: "news_instr_eli5", label: "Explain complex topics simply" },
-      { id: "news_instr_stockcontext", label: "Include stock market context" },
-    ],
     subCategories: [
       {
         id: "news_tech",
         label: "Technology",
         icon: "💻",
-        tags: [
-          { id: "tech_ai", label: "Artificial Intelligence" },
-          { id: "tech_gadgets", label: "Gadgets & Devices" },
-          { id: "tech_startups", label: "Startups & Venture" },
-          { id: "tech_cyber", label: "Cybersecurity" },
+        followUpQuestions: [
+          {
+            id: "tech_storyType",
+            text: "What kinda tech stories get you hooked lately?",
+            predefinedAnswerTags: [
+              { id: "tech_story_startups", label: "💡 Startups" },
+              { id: "tech_story_ai", label: "🤖 AI & Innovation" },
+              { id: "tech_story_gadgets", label: "📱 Gadgets" },
+              { id: "tech_story_bigtech", label: "🏢 Big Tech" },
+            ],
+          },
+          {
+            id: "tech_side",
+            text: "Nice — and which side of tech excites you more?",
+            predefinedAnswerTags: [
+              { id: "tech_side_consumer", label: "🧑‍💻 Consumer" },
+              { id: "tech_side_enterprise", label: "🏭 Enterprise" },
+              { id: "tech_side_research", label: "🔬 Research" },
+            ],
+          },
+          {
+            id: "tech_vibe",
+            text: "When it comes to updates, what’s your vibe?",
+            predefinedAnswerTags: [
+              { id: "tech_vibe_breaking", label: "⚡ Breaking news" },
+              { id: "tech_vibe_deepdives", label: "🧠 Deep dives" },
+              { id: "tech_vibe_explainers", label: "😄 Fun explainers" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "tech_instr_launches", label: "Focus on product launches" },
+          { id: "tech_instr_no_funding", label: "Avoid startup funding news" },
+          { id: "tech_instr_technical", label: "Include technical deep-dives" },
+          {
+            id: "tech_instr_major_only",
+            label: "Major companies only (Apple, etc.)",
+          },
         ],
       },
       {
         id: "news_finance",
         label: "Business & Finance",
         icon: "💹",
-        tags: [
-          { id: "finance_markets", label: "Stock Market" },
-          { id: "finance_economy", label: "Global Economy" },
-          { id: "finance_crypto", label: "Cryptocurrency" },
-          { id: "finance_corporate", label: "Corporate News" },
+        followUpQuestions: [
+          {
+            id: "finance_storyType",
+            text: "What business stories grab your attention?",
+            predefinedAnswerTags: [
+              { id: "finance_story_startups", label: "🚀 Startups" },
+              { id: "finance_story_global", label: "🌍 Global markets" },
+              { id: "finance_story_corps", label: "🏢 Big corporates" },
+              { id: "finance_story_personal", label: "💰 Personal finance" },
+            ],
+          },
+          {
+            id: "finance_insights",
+            text: "Cool — and what kind of insights do you enjoy most?",
+            predefinedAnswerTags: [
+              { id: "finance_insights_trends", label: "📊 Daily trends" },
+              { id: "finance_insights_expert", label: "💡 Expert takes" },
+              { id: "finance_insights_founder", label: "🧑‍💼 Founder stories" },
+            ],
+          },
+          {
+            id: "finance_sectors",
+            text: "Any sectors you’d love me to keep an eye on?",
+            predefinedAnswerTags: [
+              { id: "finance_sector_tech", label: "💻 Tech" },
+              { id: "finance_sector_finance", label: "🏦 Finance" },
+              { id: "finance_sector_fmcg", label: "🍔 FMCG" },
+              { id: "finance_sector_energy", label: "🔋 Energy" },
+              { id: "finance_sector_auto", label: "🚗 Auto" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          {
+            id: "finance_instr_local_market",
+            label: "Focus on my country's market",
+          },
+          { id: "finance_instr_no_crypto", label: "No crypto news" },
+          { id: "finance_instr_tickers", label: "Include stock tickers" },
+          { id: "finance_instr_ceo", label: "CEO interviews" },
         ],
       },
       {
         id: "news_world",
         label: "World Affairs",
         icon: "🌍",
-        tags: [
-          { id: "world_geopolitics", label: "Geopolitics" },
-          { id: "world_relations", label: "International Relations" },
-          { id: "world_humanrights", label: "Human Rights" },
+        followUpQuestions: [
+          {
+            id: "world_region",
+            text: "What part of the world do you track the most?",
+            predefinedAnswerTags: [
+              { id: "world_region_sa", label: "🇮🇳 South Asia" },
+              { id: "world_region_us", label: "🇺🇸 US" },
+              { id: "world_region_eu", label: "🇪🇺 Europe" },
+              { id: "world_region_global", label: "🌍 Global mix" },
+            ],
+          },
+          {
+            id: "world_updateType",
+            text: "What kind of world updates interest you?",
+            predefinedAnswerTags: [
+              { id: "world_update_geopolitics", label: "⚔️ Geopolitics" },
+              { id: "world_update_economy", label: "💱 Economy" },
+              { id: "world_update_diplomacy", label: "🕊️ Diplomacy" },
+              { id: "world_update_conflicts", label: "🔥 Conflicts" },
+            ],
+          },
+          {
+            id: "world_depth",
+            text: "You like your news…",
+            predefinedAnswerTags: [
+              { id: "world_depth_quick", label: "📰 Quick & sharp" },
+              { id: "world_depth_deep", label: "🧩 Detailed & deep" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "world_instr_diplomacy", label: "Focus on diplomacy" },
+          {
+            id: "world_instr_no_graphic",
+            label: "No graphic conflict reports",
+          },
+          { id: "world_instr_context", label: "Include historical context" },
+          { id: "world_instr_trade", label: "Summarize trade agreements" },
         ],
       },
       {
         id: "news_science",
         label: "Science",
         icon: "🔬",
-        tags: [
-          { id: "sci_space", label: "Space Exploration" },
-          { id: "sci_climate", label: "Climate Change" },
-          { id: "sci_bio", label: "Biology & Genetics" },
-          { id: "sci_physics", label: "Physics Discoveries" },
+        followUpQuestions: [
+          {
+            id: "sci_topic",
+            text: "What kinda science stuff fascinates you most?",
+            predefinedAnswerTags: [
+              { id: "sci_topic_space", label: "🚀 Space" },
+              { id: "sci_topic_bio", label: "🧬 Biology" },
+              { id: "sci_topic_physics", label: "⚡ Physics" },
+              { id: "sci_topic_env", label: "🌱 Environment" },
+            ],
+          },
+          {
+            id: "sci_depth",
+            text: "How deep should we go with updates?",
+            predefinedAnswerTags: [
+              { id: "sci_depth_simple", label: "💬 Simple" },
+              { id: "sci_depth_medium", label: "🧠 Medium" },
+              { id: "sci_depth_research", label: "🔬 Research-level" },
+            ],
+          },
+          {
+            id: "sci_storyType",
+            text: "What stories spark your curiosity?",
+            predefinedAnswerTags: [
+              { id: "sci_story_discoveries", label: "🧪 Discoveries" },
+              { id: "sci_story_experiments", label: "🧤 Experiments" },
+              { id: "sci_story_debates", label: "💭 Debates" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "sci_instr_eli5", label: "Explain for non-experts" },
+          { id: "sci_instr_papers", label: "Link to research papers" },
+          {
+            id: "sci_instr_positive_breakthroughs",
+            label: "Focus on breakthroughs",
+          },
+          { id: "sci_instr_no_pseudoscience", label: "No pseudoscience" },
         ],
       },
       {
         id: "news_health",
         label: "Health & Wellness",
         icon: "⚕️",
-        tags: [
-          { id: "health_medical", label: "Medical Breakthroughs" },
-          { id: "health_fitness", label: "Fitness Trends" },
-          { id: "health_nutrition", label: "Nutrition Science" },
-          { id: "health_mental", label: "Mental Health" },
+        followUpQuestions: [
+          {
+            id: "health_updateType",
+            text: "What kinda health updates do you want from me?",
+            predefinedAnswerTags: [
+              { id: "health_update_nutrition", label: "🥗 Nutrition" },
+              { id: "health_update_mental", label: "🧘 Mental health" },
+              { id: "health_update_fitness", label: "🏋️ Fitness" },
+              { id: "health_update_research", label: "💉 Research" },
+            ],
+          },
+          {
+            id: "health_contentStyle",
+            text: "How do you like your health content?",
+            predefinedAnswerTags: [
+              { id: "health_content_lifestyle", label: "🌿 Lifestyle tips" },
+              { id: "health_content_studies", label: "📚 Studies & data" },
+              { id: "health_content_mix", label: "⚖️ Balanced mix" },
+            ],
+          },
+          {
+            id: "health_tone",
+            text: "What tone keeps you motivated?",
+            predefinedAnswerTags: [
+              { id: "health_tone_uplifting", label: "💪 Uplifting" },
+              { id: "health_tone_edu", label: "🧠 Educational" },
+              { id: "health_tone_analytical", label: "🧾 Analytical" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "health_instr_actionable", label: "Provide actionable tips" },
+          { id: "health_instr_sources", label: "Cite scientific sources" },
+          {
+            id: "health_instr_mental_focus",
+            label: "Prioritize mental health",
+          },
+          { id: "health_instr_no_fads", label: "No diet fads" },
         ],
       },
       {
         id: "news_politics",
         label: "Politics",
         icon: "🏛️",
-        tags: [
-          { id: "politics_elections", label: "Elections" },
-          { id: "politics_policy", label: "Government Policy" },
-          { id: "politics_national", label: "National Politics" },
-          { id: "politics_global", label: "Global Politics" },
+        followUpQuestions: [
+          {
+            id: "politics_space",
+            text: "Which political space do you follow closely?",
+            predefinedAnswerTags: [
+              { id: "politics_space_national", label: "🇮🇳 National" },
+              { id: "politics_space_state", label: "🏙️ State" },
+              { id: "politics_space_global", label: "🌍 Global" },
+            ],
+          },
+          {
+            id: "politics_attention",
+            text: "What catches your attention most?",
+            predefinedAnswerTags: [
+              { id: "politics_attention_policy", label: "📜 Policy moves" },
+              { id: "politics_attention_elections", label: "🗳️ Elections" },
+              {
+                id: "politics_attention_strategy",
+                label: "🧩 Strategy & power plays",
+              },
+            ],
+          },
+          {
+            id: "politics_tone",
+            text: "What tone do you prefer?",
+            predefinedAnswerTags: [
+              { id: "politics_tone_neutral", label: "⚖️ Neutral" },
+              { id: "politics_tone_analytical", label: "🧠 Analytical" },
+              { id: "politics_tone_witty", label: "😏 Witty & sharp" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          {
+            id: "politics_instr_policy_analysis",
+            label: "Focus on policy analysis",
+          },
+          { id: "politics_instr_no_opinion", label: "Avoid opinion pieces" },
+          {
+            id: "politics_instr_local_elections",
+            label: "Cover local-level elections",
+          },
+          {
+            id: "politics_instr_explain_process",
+            label: "Explain legislative process",
+          },
         ],
       },
       {
         id: "news_environment",
         label: "Environment",
         icon: "🌳",
-        tags: [
-          { id: "env_conservation", label: "Conservation Efforts" },
-          { id: "env_energy", label: "Renewable Energy" },
-          { id: "env_pollution", label: "Pollution Reports" },
+        followUpQuestions: [
+          {
+            id: "env_storyType",
+            text: "What kinda green stories interest you most?",
+            predefinedAnswerTags: [
+              { id: "env_story_climate", label: "🌎 Climate change" },
+              { id: "env_story_conservation", label: "🌳 Conservation" },
+              { id: "env_story_energy", label: "🔋 Clean energy" },
+              { id: "env_story_pollution", label: "🚯 Pollution" },
+            ],
+          },
+          {
+            id: "env_angle",
+            text: "What angle would you like more of?",
+            predefinedAnswerTags: [
+              { id: "env_angle_crises", label: "🆘 Global crises" },
+              { id: "env_angle_local", label: "🏡 Local action" },
+              { id: "env_angle_innovation", label: "💡 Innovation & fixes" },
+            ],
+          },
+          {
+            id: "env_hope",
+            text: "What gives you hope in this space?",
+            predefinedAnswerTags: [
+              { id: "env_hope_tech", label: "🚀 New tech" },
+              { id: "env_hope_activism", label: "✊ Activism" },
+              { id: "env_hope_grassroots", label: "🌾 Grassroots efforts" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          { id: "env_instr_solutions", label: "Focus on solutions" },
+          { id: "env_instr_data", label: "Include data & statistics" },
+          {
+            id: "env_instr_local_conservation",
+            label: "Cover local conservation",
+          },
+          { id: "env_instr_green_tech", label: "Highlight green tech" },
         ],
       },
       {
         id: "news_education",
         label: "Education",
         icon: "🎓",
-        tags: [
-          { id: "edu_edtech", label: "EdTech Innovations" },
-          { id: "edu_highered", label: "Higher Education" },
-          { id: "edu_policy", label: "Education Policy" },
+        followUpQuestions: [
+          {
+            id: "edu_updateType",
+            text: "What type of education updates should I send?",
+            predefinedAnswerTags: [
+              { id: "edu_update_edtech", label: "💻 Edtech" },
+              { id: "edu_update_policy", label: "📚 Policy & exams" },
+              { id: "edu_update_careers", label: "💼 Careers" },
+              { id: "edu_update_highered", label: "🎓 Higher ed" },
+            ],
+          },
+          {
+            id: "edu_role",
+            text: "Just curious — which one describes you best?",
+            predefinedAnswerTags: [
+              { id: "edu_role_student", label: "👩‍🎓 Student" },
+              { id: "edu_role_parent", label: "👩‍👩‍👧 Parent" },
+              { id: "edu_role_teacher", label: "👩‍🏫 Teacher" },
+              { id: "edu_role_professional", label: "👨‍💼 Professional" },
+            ],
+          },
+          {
+            id: "edu_storyType",
+            text: "What kind of stories inspire you most?",
+            predefinedAnswerTags: [
+              { id: "edu_story_success", label: "🌟 Success stories" },
+              { id: "edu_story_trends", label: "📊 Trends" },
+              { id: "edu_story_skills", label: "🛠️ Skill-building insights" },
+            ],
+          },
+        ],
+        popularInstructionTags: [
+          {
+            id: "edu_instr_higher_ed_policy",
+            label: "Focus on higher-ed policy",
+          },
+          { id: "edu_instr_no_exam_stress", label: "No exam stress articles" },
+          { id: "edu_instr_edtech_startups", label: "Include EdTech startups" },
+          { id: "edu_instr_skill_focus", label: "Focus on skill development" },
         ],
       },
       {
         id: "news_local",
         label: "Local News",
         icon: "🏘️",
-        tags: [
-          { id: "local_politics", label: "Local Politics" },
-          { id: "local_community", label: "Community Events" },
-          { id: "local_dev", label: "Urban Development" },
-        ],
-      },
-    ],
-    followUpQuestions: [
-      {
-        id: "newsSources",
-        text: "Do you have preferred news sources or any to avoid?",
-        predefinedAnswerTags: [
-          { id: "source_mainstream", label: "Mainstream Sources" },
-          { id: "source_independent", label: "Independent Media" },
+        followUpQuestions: [
           {
-            id: "source_specific",
-            label: "Specific publications (mention in Other)",
+            id: "local_updateType",
+            text: "What local updates do you care about most?",
+            predefinedAnswerTags: [
+              { id: "local_update_city", label: "🏙️ City issues" },
+              { id: "local_update_culture", label: "🎭 Culture & events" },
+              { id: "local_update_openings", label: "🏪 New openings" },
+              { id: "local_update_safety", label: "🚨 Safety alerts" },
+            ],
+          },
+          {
+            id: "local_focus",
+            text: "Where should I focus the updates?",
+            predefinedAnswerTags: [
+              { id: "local_focus_city", label: "📍 My city" },
+              { id: "local_focus_state", label: "🗺️ My state" },
+              { id: "local_focus_region", label: "🧭 Nearby region" },
+            ],
+          },
+          {
+            id: "local_tone",
+            text: "What tone works best for you?",
+            predefinedAnswerTags: [
+              { id: "local_tone_info", label: "📢 Informative" },
+              { id: "local_tone_actionable", label: "🧭 Actionable" },
+              { id: "local_tone_feelgood", label: "❤️ Feel-good" },
+            ],
           },
         ],
-        hasOtherOption: true,
-      },
-      {
-        id: "topicDepth",
-        text: "How deep do you want to go on selected topics?",
-        predefinedAnswerTags: [
-          { id: "depth_headlines", label: "Headlines Only" },
-          { id: "depth_summaries", label: "Brief Summaries (1-2 paras)" },
-          { id: "depth_detailed", label: "Detailed Coverage / Analysis" },
+        popularInstructionTags: [
+          {
+            id: "local_instr_my_neighborhood",
+            label: "Focus on my neighborhood",
+          },
+          { id: "local_instr_weekend", label: "Include weekend events" },
+          { id: "local_instr_no_crime", label: "No crime reports" },
+          { id: "local_instr_restaurants", label: "New restaurant openings" },
         ],
-      },
-      {
-        id: "newsFormatPreference",
-        text: "What format do you prefer for news updates?",
-        predefinedAnswerTags: [
-          { id: "format_bullet", label: "Bullet Points" },
-          { id: "format_shortPara", label: "Short Paragraphs" },
-          { id: "format_links", label: "Links to Full Articles" },
-          { id: "format_visual", label: "Include relevant images/videos" },
-        ],
-        hasOtherOption: true,
-      },
-      {
-        id: "newsFrequencyPerTopic",
-        text: "For very active topics, how often do you want updates?",
-        predefinedAnswerTags: [
-          { id: "freq_breaking", label: "As it happens (Breaking News)" },
-          { id: "freq_fewtimesaday", label: "A few times a day" },
-          { id: "freq_dailycap", label: "Once daily per topic" },
-        ],
-        hasOtherOption: true,
       },
     ],
   },
@@ -856,85 +1357,47 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
         label: "Include transcripts if available",
       },
     ],
-    subCategories: [
+    followUpQuestions: [
       {
-        id: "youtube_channels",
-        label: "Favorite Channels/Creators",
-        icon: ICONS.USER,
-        tags: [
-          { id: "yt_mkbhd", label: "MKBHD" },
-          { id: "yt_kurzgesagt", label: "Kurzgesagt" },
-          { id: "yt_mrbeast", label: "MrBeast" },
-          { id: "yt_pewdiepie", label: "PewDiePie" },
-          { id: "yt_ted", label: "TED Talks" },
-          { id: "yt_natgeo", label: "National Geographic" },
-          { id: "yt_technicalguruji", label: "Technical Guruji (India)" },
-          { id: "yt_bbkivines", label: "BB Ki Vines (India)" },
-        ],
+        id: "yt_channels",
+        text: "To start, which channels or creators are your must-watches? (e.g., MKBHD, MrBeast)",
+        hasOtherOption: true,
       },
       {
-        id: "youtube_topics",
-        label: "Topics of Interest",
-        icon: "📚",
-        tags: [
+        id: "yt_topics",
+        text: "And what topics do you generally enjoy on YouTube?",
+        predefinedAnswerTags: [
           { id: "yt_topic_coding", label: "Coding Tutorials" },
-          { id: "yt_topic_gaming", label: "Gaming Highlights" },
+          { id: "yt_topic_gaming", label: "Gaming" },
           { id: "yt_topic_cooking", label: "Cooking Shows" },
           { id: "yt_topic_science", label: "Science Explainers" },
-          { id: "yt_topic_music", label: "Music (Live/Official)" },
+          { id: "yt_topic_music", label: "Music" },
           { id: "yt_topic_podcasts", label: "Video Podcasts" },
           { id: "yt_topic_reviews", label: "Product Reviews" },
           { id: "yt_topic_travel", label: "Travel Vlogs" },
         ],
+        hasOtherOption: true,
       },
       {
-        id: "youtube_duration",
-        label: "Preferred Video Duration",
-        icon: ICONS.CLOCK,
-        tags: [
+        id: "yt_duration",
+        text: "What is your preferred video length?",
+        isSingleSelect: true,
+        predefinedAnswerTags: [
           { id: "yt_dur_short", label: "< 5 minutes" },
           { id: "yt_dur_medium", label: "5-15 minutes" },
           { id: "yt_dur_long", label: "15-30 minutes" },
           { id: "yt_dur_any", label: "> 30 minutes / Any" },
         ],
       },
-    ],
-    followUpQuestions: [
-      {
-        id: "videoStyle",
-        text: "What style of YouTube videos do you enjoy most?",
-        predefinedAnswerTags: [
-          { id: "style_educational", label: "Educational/Informative" },
-          { id: "style_reviews", label: "Reviews/Tutorials" },
-          { id: "style_vlogs", label: "Vlogs/Lifestyle" },
-          { id: "style_comedy", label: "Comedy/Skits" },
-          { id: "style_music", label: "Music Videos/Performances" },
-          { id: "style_documentary", label: "Documentary Style" },
-          { id: "style_interviews", label: "Interviews/Podcasts" },
-        ],
-        hasOtherOption: true,
-      },
-      {
-        id: "contentGoal",
-        text: "For your selected topics/channels, what is your primary goal?",
-        predefinedAnswerTags: [
-          { id: "goal_entertainment", label: "Entertainment & Fun" },
-          { id: "goal_learning", label: "Learning a New Skill" },
-          { id: "goal_informed", label: "Staying Informed/Updated" },
-          { id: "goal_reviews", label: "Product Reviews & Decisions" },
-        ],
-        hasOtherOption: true,
-      },
       {
         id: "creatorInteraction",
-        text: "Are you interested in creator updates beyond videos?",
+        text: "Are you interested in creator updates beyond just new videos?",
         predefinedAnswerTags: [
           { id: "creator_community", label: "Community Posts" },
           { id: "creator_live", label: "Live Streams" },
           { id: "creator_shorts", label: "YouTube Shorts" },
           { id: "creator_noextra", label: "Just the main videos" },
         ],
-        hasOtherOption: true,
       },
     ],
   },

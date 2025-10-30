@@ -138,6 +138,8 @@ const LandingPage: React.FC = () => {
   const [whatsappNumber, setWhatsappNumber] = useState(
     user.whatsappNumber || ""
   );
+  const [countryDialCode, setCountryDialCode] = useState<string>("91");
+  const [countryIso2, setCountryIso2] = useState<string>("in");
   const [emailError, setEmailError] = useState("");
   const [whatsappError, setWhatsappError] = useState("");
   const [loginIntent, setLoginIntent] = useState<"create" | "login">("create");
@@ -209,16 +211,38 @@ const LandingPage: React.FC = () => {
   };
 
   const validateWhatsappNumber = (value: string): boolean => {
-    if (!value) {
+    // Normalize value to +<digits>
+    const cleaned = value.replace(/\s+/g, "");
+    if (!cleaned) {
       setWhatsappError("WhatsApp number is required.");
       return false;
     }
-    if (!/^\+?[1-9]\d{1,14}$/.test(value)) {
-      setWhatsappError(
-        "Please enter a valid WhatsApp number (e.g., +1234567890)."
-      );
+
+    const withPlus = cleaned.startsWith("+") ? cleaned : `+${cleaned}`;
+    if (!/^\+[1-9]\d{6,14}$/.test(withPlus)) {
+      setWhatsappError("Please enter a valid WhatsApp number.");
       return false;
     }
+
+    // Country-specific light checks
+    const dial = countryDialCode || "91";
+    const national = withPlus.replace(new RegExp(`^\\+${dial}`), "");
+
+    if ((countryIso2 || "in").toLowerCase() === "in") {
+      if (!/^\d{10}$/.test(national) || !/^[6-9]/.test(national)) {
+        setWhatsappError(
+          "Enter a valid 10-digit Indian mobile number starting 6-9."
+        );
+        return false;
+      }
+    } else {
+      // Generic bounds for non-IN numbers
+      if (national.length < 7 || national.length > 12) {
+        setWhatsappError("Enter a valid phone number for your country.");
+        return false;
+      }
+    }
+
     setWhatsappError("");
     return true;
   };
@@ -295,12 +319,6 @@ const LandingPage: React.FC = () => {
           country_code = "+91"; // Default to India
           phone_number = cleaned;
         }
-
-        console.log("📞 Parsed phone details:", {
-          country_code,
-          phone_number,
-          original: whatsappNumber,
-        });
 
         // Call the API
         const response = await login({
@@ -792,8 +810,12 @@ const LandingPage: React.FC = () => {
                   <PhoneInput
                     country={"in"}
                     value={whatsappNumber}
-                    onChange={(value) => {
+                    onChange={(value, data: any) => {
                       setWhatsappNumber(value);
+                      if (data && data.dialCode)
+                        setCountryDialCode(String(data.dialCode));
+                      if (data && data.countryCode)
+                        setCountryIso2(String(data.countryCode));
                       if (whatsappError) validateWhatsappNumber(`+${value}`);
                     }}
                     onBlur={() => validateWhatsappNumber(`+${whatsappNumber}`)}
