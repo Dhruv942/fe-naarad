@@ -92,6 +92,11 @@ const InterestSelectionPage: React.FC = () => {
   };
 
   const handleMainCategorySelect = (category: MainCategory) => {
+    // Prevent selection if category is coming soon or not ready
+    if (category.id === "youtube" || category.id === "custom") {
+      return;
+    }
+
     clearValidation();
     const isDeselecting = activeMainCategory === category.id;
 
@@ -691,29 +696,44 @@ const InterestSelectionPage: React.FC = () => {
                 message={validationErrors["main-category-section"]}
               />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-                {mainCategoriesArray.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => handleMainCategorySelect(category)}
-                    className={`p-5 md:p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1.5 focus:outline-none focus:ring-4 
-                      ${
-                        activeMainCategory === category.id
-                          ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
-                          : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
-                      }
-                    `}
-                    aria-pressed={activeMainCategory === category.id}
-                  >
-                    <div className="flex flex-col items-center justify-center space-y-3">
-                      <span className="text-4xl md:text-5xl">
-                        {category.icon}
-                      </span>
-                      <span className="text-md md:text-lg font-semibold tracking-wide">
-                        {category.label}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+                {mainCategoriesArray.map((category) => {
+                  const isDisabled =
+                    category.id === "youtube" || category.id === "custom";
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => handleMainCategorySelect(category)}
+                      disabled={isDisabled}
+                      className={`p-5 md:p-6 rounded-xl shadow-lg transition-all duration-300 ease-in-out focus:outline-none
+                        ${
+                          isDisabled
+                            ? "bg-gray-600/30 text-gray-400 cursor-not-allowed opacity-50"
+                            : `hover:shadow-xl transform hover:-translate-y-1.5 focus:ring-4 ${
+                                activeMainCategory === category.id
+                                  ? `bg-${category.color} text-${category.textColor} ring-4 ring-white/90 scale-105 shadow-xl`
+                                  : `bg-${category.color}/60 text-white hover:bg-${category.color}/80 focus:ring-${category.color}/50 focus:ring-offset-secondary/30`
+                              }`
+                        }
+                      `}
+                      aria-pressed={activeMainCategory === category.id}
+                      aria-disabled={isDisabled}
+                    >
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <span className="text-4xl md:text-5xl">
+                          {category.icon}
+                        </span>
+                        <span className="text-md md:text-lg font-semibold tracking-wide">
+                          {category.label}
+                          {isDisabled && (
+                            <span className="block text-xs mt-1">
+                              (Coming Soon)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </section>
 

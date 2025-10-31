@@ -208,22 +208,23 @@ const DashboardPage: React.FC = () => {
                         </span>
                       </div>
                     )}
-                    {apiAlert.sub_categories.length > 0 && (
-                      <div>
-                        <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
-                          Interests:
-                        </strong>
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                          {apiAlert.sub_categories.map((subCat, idx) => (
-                            <DisplayDetailTag
-                              key={idx}
-                              label={formatTagLabel(subCat)}
-                              color="primary-lightest"
-                            />
-                          ))}
+                    {Array.isArray(apiAlert.sub_categories) &&
+                      apiAlert.sub_categories.length > 0 && (
+                        <div>
+                          <strong className="font-medium text-gray-500 text-xs sm:text-sm block mb-2">
+                            Interests:
+                          </strong>
+                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                            {apiAlert.sub_categories.map((subCat, idx) => (
+                              <DisplayDetailTag
+                                key={idx}
+                                label={formatTagLabel(subCat)}
+                                color="primary-lightest"
+                              />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                     {apiAlert.followup_questions &&
                       apiAlert.followup_questions.length > 0 && (
                         <div>
