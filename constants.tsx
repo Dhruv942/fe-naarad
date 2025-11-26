@@ -12,6 +12,7 @@ export const PagePath = {
   TUNING: "/tuning",
   FREQUENCY: "/frequency",
   DASHBOARD: "/dashboard",
+  PRIVACY_POLICY: "/privacy-policy",
 };
 
 export const ICONS = {

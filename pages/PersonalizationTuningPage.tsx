@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { usePreferences } from "../contexts/PreferencesContext";
 import Button from "../components/common/Button";
@@ -7,7 +7,28 @@ import WhatsAppPreview from "../components/common/WhatsAppPreview";
 import ProgressIndicator from "../components/common/ProgressIndicator";
 import { ICONS, PagePath } from "../constants";
 import { generateTuningSamples } from "../services/geminiService";
-import { SampleMessage, Alert } from "../types";
+import { SampleMessage } from "../types";
+
+const FALLBACK_TUNING_SAMPLES: SampleMessage[] = [
+  {
+    summaryText:
+      "🎬 Weekend Binge Alert!\n\nA24 just dropped the teaser for 'Neon Harbour'—think 'Blade Runner' vibes with coastal noir twists. Plus, Kriti Sanon's sci-fi thriller hits Prime Video tomorrow.\n\nTap to line up your watchlist before everyone else.",
+    imageUrl: "🍿",
+    actionText: "See What's Streaming",
+  },
+  {
+    summaryText:
+      "⚽ Goal Rush: Sunday Special\n\nArsenal vs. Spurs kicks off at 9 PM IST with Havertz back in form. Meanwhile, Messi is rested and ready for Inter Miami's playoff push.\n\nSkip the noise; get the key highlights we’ll send post-match.",
+    imageUrl: "⚽",
+    actionText: "Track These Matches",
+  },
+  {
+    summaryText:
+      "📺 Creator Spotlight\n\nMKBHD just reviewed the Pixel Fold 3—bigger outer display, smarter AI summarizer. Also, Tanmay Bhat's new pod breaks down Indian startup failures with real numbers.\n\nTune in before Twitter does.",
+    imageUrl: "🎧",
+    actionText: "Open the Rundown",
+  },
+];
 
 // A self-contained, animated card for providing feedback
 const TuningCard: React.FC<{
@@ -71,17 +92,22 @@ const TuningCard: React.FC<{
 const PersonalizationTuningPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeAlert, setActiveAlert, user } = usePreferences();
+  const userRef = useRef(user);
   const [cards, setCards] = useState<SampleMessage[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [feedbackCount, setFeedbackCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [exitDirection, setExitDirection] = useState<"like" | "dislike" | null>(
     null
   );
   const [isInitialCard, setIsInitialCard] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const MIN_FEEDBACK_COUNT = 3;
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     if (!activeAlert) {
@@ -89,37 +115,64 @@ const PersonalizationTuningPage: React.FC = () => {
       return;
     }
 
-    const fetchCards = async () => {
+    let cancelled = false;
+
+    const ensureMinimumSamples = (samples: SampleMessage[]): SampleMessage[] => {
+      const normalized = samples
+        .filter(Boolean)
+        .map((sample) => ({
+          ...sample,
+          imageUrl: sample.imageUrl || sample.imageSuggestion,
+        }))
+        .slice(0, MIN_FEEDBACK_COUNT);
+
+      if (normalized.length >= MIN_FEEDBACK_COUNT) {
+        return normalized;
+      }
+
+      const remaining = MIN_FEEDBACK_COUNT - normalized.length;
+      const fallbackAdditions = FALLBACK_TUNING_SAMPLES.slice(0, remaining);
+      return [...normalized, ...fallbackAdditions];
+    };
+
+    const loadSamples = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const tuningSamples = await generateTuningSamples(activeAlert, user);
-        if (tuningSamples.length < MIN_FEEDBACK_COUNT) {
-          setError(
-            "Couldn't generate enough samples for tuning. Using fallbacks."
-          );
-          const fallbacksNeeded = MIN_FEEDBACK_COUNT - tuningSamples.length;
-          const fallbackCards = Array(fallbacksNeeded)
-            .fill(0)
-            .map((_, i) => ({
-              summaryText: `This is a fallback sample message #${i + 1} as we couldn't generate enough variety for your choices.`,
-              imageUrl: "⚙️",
-              actionText: "Explore More",
-            }));
-          setCards([...tuningSamples, ...fallbackCards]);
-        } else {
-          setCards(tuningSamples);
-        }
-      } catch (e) {
-        setError("An error occurred while preparing your tuning feed.");
-        console.error(e);
+        const generatedSamples = await generateTuningSamples(
+          activeAlert,
+          userRef.current
+        );
+        if (cancelled) return;
+
+        const preparedSamples = ensureMinimumSamples(generatedSamples);
+
+        setCards(preparedSamples);
+        setCurrentIndex(0);
+        setFeedbackCount(0);
+        setExitDirection(null);
+        setIsInitialCard(true);
+      } catch (err) {
+        console.error("Failed to generate tuning samples:", err);
+        if (cancelled) return;
+        setError(
+          "We couldn't generate fresh samples right now. Showing fallback suggestions."
+        );
+        setCards(FALLBACK_TUNING_SAMPLES.slice(0, MIN_FEEDBACK_COUNT));
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
-    fetchCards();
-  }, [activeAlert, user, navigate]);
+    loadSamples();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAlert?.id, navigate]);
 
   const handleFeedback = (direction: "like" | "dislike") => {
     if (!activeAlert || currentIndex >= cards.length || exitDirection) return;
@@ -187,15 +240,7 @@ const PersonalizationTuningPage: React.FC = () => {
                 />
               </div>
             )}
-            {error && !isLoading && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-center text-red-400 bg-red-900/50 p-4 rounded-lg">
-                  {error}
-                </p>
-              </div>
-            )}
-
-            {!isLoading && !error && (
+            {!isLoading && (
               <>
                 {/* Card Deck visual effect */}
                 {currentIndex + 2 < cards.length && !isTuningComplete && (
@@ -250,6 +295,12 @@ const PersonalizationTuningPage: React.FC = () => {
             )}
           </div>
         </div>
+
+        {!isLoading && error && (
+          <div className="mt-4 text-sm text-yellow-200 bg-yellow-900/30 border border-yellow-500/40 px-4 py-3 rounded-lg text-center">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="sticky bottom-0 z-10 p-2 bg-gray-950/90 backdrop-blur-sm border-t border-primary-lighter/20">

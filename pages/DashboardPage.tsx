@@ -39,68 +39,68 @@ const DisplayDetailTag: React.FC<{
 
 const DashboardPage: React.FC = () => {
   const { user, logout, startNewAlert } = usePreferences();
-  const [apiAlerts, setApiAlerts] = useState<AlertItem[]>([]);
+  const [apiAlerts, setApiAlerts] = useState<any[]>([]);
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
   const [alertsError, setAlertsError] = useState<string | null>(null);
 
-  const fetchAlerts = async () => {
-    const userId = localStorage.getItem("user_id");
+  // const fetchAlerts = async () => {
+  //   const userId = localStorage.getItem("user_id");
+  //
+  //   if (!userId) {
+  //     setIsLoadingAlerts(false);
+  //     return;
+  //   }
+  //
+  //   setIsLoadingAlerts(true);
+  //   setAlertsError(null);
+  //
+  //   try {
+  //     const response = await getAlertsByUserId(userId);
+  //
+  //     if (response.success) {
+  //       const alertsArray = Array.isArray(response.alerts)
+  //         ? response.alerts
+  //         : [];
+  //       setApiAlerts(alertsArray);
+  //     } else {
+  //       setAlertsError(response.error || "Failed to fetch alerts");
+  //     }
+  //   } catch (error) {
+  //     setAlertsError(
+  //       error instanceof Error ? error.message : "An error occurred"
+  //     );
+  //   } finally {
+  //     setIsLoadingAlerts(false);
+  //   }
+  // };
 
-    if (!userId) {
-      setIsLoadingAlerts(false);
-      return;
-    }
-
-    setIsLoadingAlerts(true);
-    setAlertsError(null);
-
-    try {
-      const response = await getAlertsByUserId(userId);
-
-      if (response.success) {
-        const alertsArray = Array.isArray(response.alerts)
-          ? response.alerts
-          : [];
-        setApiAlerts(alertsArray);
-      } else {
-        setAlertsError(response.error || "Failed to fetch alerts");
-      }
-    } catch (error) {
-      setAlertsError(
-        error instanceof Error ? error.message : "An error occurred"
-      );
-    } finally {
-      setIsLoadingAlerts(false);
-    }
-  };
-
-  const handleDeleteAlert = async (alertId: string) => {
-    if (!confirm("Are you sure you want to delete this alert?")) {
-      return;
-    }
-
-    const userId = localStorage.getItem("user_id");
-    if (!userId) {
-      alert("User ID not found. Please login again.");
-      return;
-    }
-
-    try {
-      const response = await deleteAlertById(userId, alertId);
-
-      if (response.success) {
-        // Remove alert from UI
-        setApiAlerts(apiAlerts.filter((alert) => alert.alert_id !== alertId));
-      } else {
-        alert(response.error || "Failed to delete alert");
-      }
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "An error occurred");
-    }
-  };
+  // const handleDeleteAlert = async (alertId: string) => {
+  //   if (!confirm("Are you sure you want to delete this alert?")) {
+  //     return;
+  //   }
+  //
+  //   const userId = localStorage.getItem("user_id");
+  //   if (!userId) {
+  //     alert("User ID not found. Please login again.");
+  //     return;
+  //   }
+  //
+  //   try {
+  //     const response = await deleteAlertById(userId, alertId);
+  //
+  //     if (response.success) {
+  //       // Remove alert from UI
+  //       setApiAlerts(apiAlerts.filter((alert) => alert.alert_id !== alertId));
+  //     } else {
+  //       alert(response.error || "Failed to delete alert");
+  //     }
+  //   } catch (error) {
+  //     alert(error instanceof Error ? error.message : "An error occurred");
+  //   }
+  // };
 
   useEffect(() => {
-    fetchAlerts();
+    setIsLoadingAlerts(false);
   }, []);
 
   return (

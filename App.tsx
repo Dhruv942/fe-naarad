@@ -1,12 +1,19 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import InterestSelectionPage from './pages/InterestSelectionPage';
-import PersonalizationTuningPage from './pages/PersonalizationTuningPage';
-import FrequencySettingsPage from './pages/FrequencySettingsPage';
-import DashboardPage from './pages/DashboardPage';
-import { usePreferences } from './contexts/PreferencesContext';
-import { PagePath } from './constants';
+import React, { useEffect } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
+import InterestSelectionPage from "./pages/InterestSelectionPage";
+import PersonalizationTuningPage from "./pages/PersonalizationTuningPage";
+import FrequencySettingsPage from "./pages/FrequencySettingsPage";
+import DashboardPage from "./pages/DashboardPage";
+import PrivacyPolicyPage from "./pages/privacypolicy";
+import { usePreferences } from "./contexts/PreferencesContext";
+import { PagePath } from "./constants";
 
 const App: React.FC = () => {
   const { user } = usePreferences();
@@ -33,25 +40,46 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Routes>
         <Route path={PagePath.LANDING} element={<LandingPage />} />
-        <Route
-          path={PagePath.INTERESTS}
-          element={isAuthenticated ? <InterestSelectionPage /> : <Navigate to={PagePath.LANDING} replace />}
-        />
+        <Route path={PagePath.INTERESTS} element={<InterestSelectionPage />} />
         <Route
           path={PagePath.TUNING}
-          element={isAuthenticated ? <PersonalizationTuningPage /> : <Navigate to={PagePath.LANDING} replace />}
+          element={
+            isAuthenticated ? (
+              <PersonalizationTuningPage />
+            ) : (
+              <Navigate to={PagePath.LANDING} replace />
+            )
+          }
         />
         <Route
           path={PagePath.FREQUENCY}
-          element={isAuthenticated ? <FrequencySettingsPage /> : <Navigate to={PagePath.LANDING} replace />}
+          element={
+            isAuthenticated ? (
+              <FrequencySettingsPage />
+            ) : (
+              <Navigate to={PagePath.LANDING} replace />
+            )
+          }
         />
         <Route
           path={PagePath.DASHBOARD}
-          element={isAuthenticated ? <DashboardPage /> : <Navigate to={PagePath.LANDING} replace />}
+          element={
+            isAuthenticated ? (
+              <DashboardPage />
+            ) : (
+              <Navigate to={PagePath.LANDING} replace />
+            )
+          }
         />
+        <Route path={PagePath.PRIVACY_POLICY} element={<PrivacyPolicyPage />} />
         <Route
           path="*"
-          element={<Navigate to={isAuthenticated ? PagePath.DASHBOARD : PagePath.LANDING} replace />}
+          element={
+            <Navigate
+              to={isAuthenticated ? PagePath.DASHBOARD : PagePath.LANDING}
+              replace
+            />
+          }
         />
       </Routes>
     </div>
