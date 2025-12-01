@@ -58,14 +58,31 @@ const FrequencySettingsPage: React.FC = () => {
     if (!activeAlert) return;
 
     try {
-      // Get user_id from localStorage
-      const userId = localStorage.getItem("user_id");
+      // Get user_id from localStorage (primary source)
+      let userId = localStorage.getItem("user_id");
+
+      // Fallback: Try to get from user context if available
+      if (!userId && user.user_id) {
+        console.warn("⚠️ user_id not in localStorage, using user context...");
+        userId = user.user_id;
+        // Also store it in localStorage for future use
+        localStorage.setItem("user_id", userId);
+      }
 
       if (!userId) {
-        alert("User ID not found. Please login again.");
+        console.error("❌ User ID not found in localStorage");
+        console.error("localStorage contents:", {
+          user_id: localStorage.getItem("user_id"),
+          authToken: localStorage.getItem("authToken") ? "exists" : "missing",
+        });
+        alert(
+          "User ID not found. Please login again.\n\nIf you just logged in, please refresh the page and try again."
+        );
         navigate(PagePath.LANDING);
         return;
       }
+
+      console.log("✅ User ID found:", userId);
 
       console.log("📤 Creating alert with user_id:", userId);
       console.log("📦 Active alert data:", activeAlert);

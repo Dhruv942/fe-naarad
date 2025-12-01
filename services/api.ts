@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://naaradupdates.info";
+const API_BASE_URL = "https://naarad-node-qkz7.onrender.com";
 
 export interface LoginRequest {
   email: string;
@@ -87,10 +87,22 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
     }
 
     console.log("✅ Login API call successful");
+    console.log("📦 Raw API response:", JSON.stringify(result, null, 2));
+
+    // Extract user_id from various possible locations
+    const extractedUserId =
+      result.user?.user_id ||
+      result.user?.id ||
+      result.user_id ||
+      result.id ||
+      result.data?.user_id ||
+      result.data?.id;
+
+    console.log("🔍 Extracted user_id from response:", extractedUserId);
     console.log("📦 Returning response:", {
       success: true,
       user: result.user,
-      user_id: result.user_id,
+      user_id: extractedUserId,
       id: result.id,
       message: result.message,
     });
@@ -98,7 +110,7 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
     return {
       success: true,
       user: result.user,
-      user_id: result.user_id,
+      user_id: extractedUserId,
       id: result.id,
       message: result.message,
     };
@@ -117,11 +129,11 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 };
 
 export interface CreateAlertRequest {
-  main_category: "Sports" | "News" | "Movies" | "YouTube" | "Custom_Input";
-  sub_categories: string[];
-  followup_questions: string[];
-  custom_question: string;
-  user_id: string;
+  user_id: string; // Required
+  main_category: "Sports" | "News" | "Movies" | "YouTube" | "Custom_Input"; // Required
+  sub_categories?: string[]; // Optional
+  followup_questions?: string[]; // Optional
+  custom_question?: string; // Optional
 }
 
 export interface CreateAlertResponse {
@@ -146,7 +158,7 @@ export const createAlert = async (
   console.log("📦 Request payload:", data);
 
   try {
-    const url = `${API_BASE_URL}/alerts/alerts`;
+    const url = `${API_BASE_URL}/alerts/`;
     console.log("🔗 Full request URL:", url);
 
     const authToken = localStorage.getItem("authToken");
@@ -223,7 +235,7 @@ export const getAlertsByUserId = async (
   console.log("🧑 User ID:", userId);
 
   try {
-    const url = `${API_BASE_URL}/alerts/alerts/${userId}`;
+    const url = `${API_BASE_URL}/alerts/${userId}`;
     console.log("🔗 Full request URL:", url);
 
     const authToken = localStorage.getItem("authToken");
@@ -250,11 +262,20 @@ export const getAlertsByUserId = async (
       };
     }
 
+    // Handle different response formats:
+    // 1. Direct array: [alert1, alert2]
+    // 2. Object with alerts: {alerts: [...]}
+    // 3. Object with data: {data: [...]}
     const normalizedAlerts = Array.isArray(result)
       ? result
+      : Array.isArray(result?.data)
+      ? result.data
       : Array.isArray(result?.alerts)
       ? result.alerts
       : [];
+
+    console.log("📦 Normalized alerts:", normalizedAlerts);
+    console.log("📦 Alerts count:", normalizedAlerts.length);
 
     return {
       success: true,

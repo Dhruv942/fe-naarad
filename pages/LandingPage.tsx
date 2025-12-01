@@ -7,6 +7,7 @@ import { ICONS, PagePath, EXAMPLE_NOTIFICATIONS } from "../constants";
 import WhatsAppPreview from "../components/common/WhatsAppPreview";
 import PhoneInput from "react-phone-input-2";
 import "react-phone-input-2/lib/style.css";
+import { login as loginApi } from "../services/api";
 
 // SVG Section Divider Component
 const SectionDivider: React.FC<{
@@ -159,6 +160,8 @@ const LandingPage: React.FC = () => {
   const [emailError, setEmailError] = useState("");
   const [whatsappError, setWhatsappError] = useState("");
   const [loginIntent, setLoginIntent] = useState<"create" | "login">("create");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [serverError, setServerError] = useState("");
 
   // State for the interactive Hero demo
   const [activeDemoCategory, setActiveDemoCategory] =
@@ -229,8 +232,10 @@ const LandingPage: React.FC = () => {
     return true;
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmitting) return;
 
     // Format phone number with + prefix
     const formattedNumber = whatsappNumber.startsWith("+")
@@ -238,17 +243,77 @@ const LandingPage: React.FC = () => {
       : `+${whatsappNumber}`;
 
     if (validateEmail(email) && validateWhatsappNumber(formattedNumber)) {
-      const updatedUser = {
-        ...user,
-        email,
-        whatsappNumber: formattedNumber,
-        isWhatsAppConfirmed: true,
-      };
-      setUser(updatedUser);
-      if (loginIntent === "login" && updatedUser.alerts.length > 0) {
-        navigate(PagePath.DASHBOARD);
-      } else {
-        startNewAlert();
+      try {
+        setIsSubmitting(true);
+        setServerError("");
+
+        // Derive API fields from phone input
+        const country_code = `+${countryDialCode || "91"}`;
+        const nationalNumber = formattedNumber.replace(
+          new RegExp(`^\\+?${countryDialCode || "91"}`),
+          ""
+        );
+
+        const response = await loginApi({
+          email,
+          country_code,
+          phone_number: nationalNumber,
+        });
+
+        if (!response.success) {
+          setServerError(
+            response.error ||
+              response.message ||
+              "Login failed. Please try again."
+          );
+          return;
+        }
+
+        // Extract user_id from multiple possible locations in the response
+        const backendUserId =
+          response.user?.user_id ||
+          response.user?.id ||
+          response.user_id ||
+          response.id;
+
+        console.log("🔍 Login response:", response);
+        console.log("🔍 Extracted user_id:", backendUserId);
+
+        // Store auth token if available
+        if (response.user?.token) {
+          localStorage.setItem("authToken", response.user.token);
+          console.log("✅ Auth token stored");
+        }
+
+        // Store user_id - this is critical for creating alerts
+        if (backendUserId) {
+          localStorage.setItem("user_id", String(backendUserId));
+          console.log("✅ User ID stored in localStorage:", backendUserId);
+        } else {
+          console.error("❌ No user_id found in login response!");
+          console.error("Full response:", JSON.stringify(response, null, 2));
+          setServerError(
+            "Login successful but user ID not received. Please contact support."
+          );
+          return;
+        }
+
+        const updatedUser = {
+          ...user,
+          email,
+          whatsappNumber: formattedNumber,
+          isWhatsAppConfirmed: true,
+          user_id: backendUserId, // Store user_id in user context as backup
+        };
+        setUser(updatedUser);
+
+        if (loginIntent === "login" && updatedUser.alerts.length > 0) {
+          navigate(PagePath.DASHBOARD);
+        } else {
+          startNewAlert();
+        }
+      } finally {
+        setIsSubmitting(false);
       }
     }
   };

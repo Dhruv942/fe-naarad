@@ -158,12 +158,23 @@ export const transformAlertToApiFormat = (
   console.log("💬 Final custom_question parts:", custom_question_parts);
   console.log("💬 Final custom_question string:", custom_question);
 
-  const transformed = {
+  // Build transformed object with only non-empty optional fields
+  const transformed: Omit<CreateAlertRequest, "user_id"> = {
     main_category,
-    sub_categories,
-    followup_questions,
-    custom_question,
   };
+
+  // Only include optional fields if they have values
+  if (sub_categories.length > 0) {
+    transformed.sub_categories = sub_categories;
+  }
+
+  if (followup_questions.length > 0) {
+    transformed.followup_questions = followup_questions;
+  }
+
+  if (custom_question.trim().length > 0) {
+    transformed.custom_question = custom_question;
+  }
 
   console.log("✅ Transformation complete:", transformed);
 

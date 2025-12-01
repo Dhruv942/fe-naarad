@@ -55,6 +55,7 @@ export interface UserPreferences {
   isWhatsAppConfirmed: boolean;
   alerts: Alert[];
   platform: "WhatsApp";
+  user_id?: string; // Store user_id from backend for API calls
 }
 
 export const initialAlertData: Omit<Alert, 'id' | 'name'> = {

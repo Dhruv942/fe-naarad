@@ -43,64 +43,89 @@ const DashboardPage: React.FC = () => {
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
   const [alertsError, setAlertsError] = useState<string | null>(null);
 
-  // const fetchAlerts = async () => {
-  //   const userId = localStorage.getItem("user_id");
-  //
-  //   if (!userId) {
-  //     setIsLoadingAlerts(false);
-  //     return;
-  //   }
-  //
-  //   setIsLoadingAlerts(true);
-  //   setAlertsError(null);
-  //
-  //   try {
-  //     const response = await getAlertsByUserId(userId);
-  //
-  //     if (response.success) {
-  //       const alertsArray = Array.isArray(response.alerts)
-  //         ? response.alerts
-  //         : [];
-  //       setApiAlerts(alertsArray);
-  //     } else {
-  //       setAlertsError(response.error || "Failed to fetch alerts");
-  //     }
-  //   } catch (error) {
-  //     setAlertsError(
-  //       error instanceof Error ? error.message : "An error occurred"
-  //     );
-  //   } finally {
-  //     setIsLoadingAlerts(false);
-  //   }
-  // };
+  const fetchAlerts = async () => {
+    // Try to get user_id from localStorage first, then from user context
+    let userId = localStorage.getItem("user_id");
+    
+    if (!userId && user.user_id) {
+      console.warn("⚠️ user_id not in localStorage, using user context...");
+      userId = user.user_id;
+      // Also store it in localStorage for future use
+      localStorage.setItem("user_id", userId);
+    }
 
-  // const handleDeleteAlert = async (alertId: string) => {
-  //   if (!confirm("Are you sure you want to delete this alert?")) {
-  //     return;
-  //   }
-  //
-  //   const userId = localStorage.getItem("user_id");
-  //   if (!userId) {
-  //     alert("User ID not found. Please login again.");
-  //     return;
-  //   }
-  //
-  //   try {
-  //     const response = await deleteAlertById(userId, alertId);
-  //
-  //     if (response.success) {
-  //       // Remove alert from UI
-  //       setApiAlerts(apiAlerts.filter((alert) => alert.alert_id !== alertId));
-  //     } else {
-  //       alert(response.error || "Failed to delete alert");
-  //     }
-  //   } catch (error) {
-  //     alert(error instanceof Error ? error.message : "An error occurred");
-  //   }
-  // };
+    if (!userId) {
+      console.error("❌ User ID not found");
+      setAlertsError("User ID not found. Please login again.");
+      setIsLoadingAlerts(false);
+      return;
+    }
+
+    setIsLoadingAlerts(true);
+    setAlertsError(null);
+
+    try {
+      console.log("📥 Fetching alerts for user_id:", userId);
+      const response = await getAlertsByUserId(userId);
+
+      if (response.success) {
+        const alertsArray = Array.isArray(response.alerts)
+          ? response.alerts
+          : [];
+        console.log("✅ Alerts fetched successfully:", alertsArray);
+        setApiAlerts(alertsArray);
+      } else {
+        console.error("❌ Failed to fetch alerts:", response.error);
+        setAlertsError(response.error || "Failed to fetch alerts");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching alerts:", error);
+      setAlertsError(
+        error instanceof Error ? error.message : "An error occurred"
+      );
+    } finally {
+      setIsLoadingAlerts(false);
+    }
+  };
+
+  const handleDeleteAlert = async (alertId: string) => {
+    if (!confirm("Are you sure you want to delete this alert?")) {
+      return;
+    }
+
+    // Try to get user_id from localStorage first, then from user context
+    let userId = localStorage.getItem("user_id");
+    
+    if (!userId && user.user_id) {
+      userId = user.user_id;
+      localStorage.setItem("user_id", userId);
+    }
+
+    if (!userId) {
+      alert("User ID not found. Please login again.");
+      return;
+    }
+
+    try {
+      console.log("🗑️ Deleting alert:", alertId, "for user:", userId);
+      const response = await deleteAlertById(userId, alertId);
+
+      if (response.success) {
+        console.log("✅ Alert deleted successfully");
+        // Remove alert from UI
+        setApiAlerts(apiAlerts.filter((alert) => alert.alert_id !== alertId));
+      } else {
+        console.error("❌ Failed to delete alert:", response.error);
+        alert(response.error || "Failed to delete alert");
+      }
+    } catch (error) {
+      console.error("❌ Error deleting alert:", error);
+      alert(error instanceof Error ? error.message : "An error occurred");
+    }
+  };
 
   useEffect(() => {
-    setIsLoadingAlerts(false);
+    fetchAlerts();
   }, []);
 
   return (
