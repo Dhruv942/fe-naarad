@@ -6,6 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import LandingPage from "./pages/LandingPage";
 import InterestSelectionPage from "./pages/InterestSelectionPage";
 import PersonalizationTuningPage from "./pages/PersonalizationTuningPage";
@@ -82,6 +83,7 @@ const App: React.FC = () => {
           }
         />
       </Routes>
+      <Analytics />
     </div>
   );
 };
