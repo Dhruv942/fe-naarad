@@ -7,9 +7,8 @@ export const SECONDARY_COLOR = "bg-teal-500";
 export const SECONDARY_HOVER_COLOR = "hover:bg-teal-600";
 
 export const PagePath = {
-  LANDING: "/", // Changed from LOGIN and set to root
+  LANDING: "/",
   INTERESTS: "/interests",
-  TUNING: "/tuning",
   FREQUENCY: "/frequency",
   DASHBOARD: "/dashboard",
   PRIVACY_POLICY: "/privacy-policy",
@@ -125,35 +124,188 @@ export const EXAMPLE_NOTIFICATIONS: Record<string, SampleMessage> = {
     imageUrl: "✨",
     actionText: "Learn More",
   },
+
+  // --- Main Categories ---
   SPORTS: {
     summaryText:
-      "⚽ Great news for cricket fans! Virat Kohli just scored a century in the ongoing test match against Australia. What a performance!",
-    imageUrl: "🏏",
-    actionText: "Full Match Report",
+      "⚽ **Sports Update:** A massive weekend ahead! Your favorite teams are all in action. Tap below to see the schedule.",
+    imageUrl: "⚽",
+    actionText: "View Schedule",
   },
-  MOVIES_TV: {
+  MOVIESTV: {
+    // ID is 'moviesTV' -> toUpper is MOVIESTV
     summaryText:
-      "🎬 Sci-Fi fans, rejoice! 'Dune: Part Two' is now streaming on Max. Critics are calling it a visual masterpiece.",
-    imageUrl: "🏜️",
-    actionText: "Watch Trailer",
+      "🎬 **Watchlist Alert:** 3 new movies matching your taste just dropped on streaming today.",
+    imageUrl: "🍿",
+    actionText: "See List",
   },
   NEWS: {
     summaryText:
-      "📰 Tech Update: A new AI model has been released that can generate realistic images from text prompts. This could revolutionize digital art!",
-    imageUrl: "🤖",
-    actionText: "Discover AI Art",
+      "📰 **Daily Briefing:** Top 5 stories you need to know today, summarized in under 2 minutes.",
+    imageUrl: "☕",
+    actionText: "Read Briefing",
   },
   YOUTUBE: {
     summaryText:
-      "📺 MKBHD just dropped a new video reviewing the latest smartphone. He says the camera is a game-changer!",
+      "📺 **New Upload:** MKBHD just dropped a review of the latest iPhone. 'Is it worth the upgrade?'",
     imageUrl: "📱",
-    actionText: "Watch Review Now",
+    actionText: "Watch Video",
   },
   CUSTOM: {
     summaryText:
-      "✍️ Based on your custom interest in 'Ancient Roman History', a new documentary exploring the fall of the Republic has just been released.",
+      "✍️ **Custom Feed:** Based on your interest in 'Ancient Roman History', here is a new finding about the Colosseum.",
     imageUrl: "🏛️",
-    actionText: "Explore Documentary",
+    actionText: "Read More",
+  },
+
+  // --- Sports Sub-Categories ---
+  SPORTS_CRICKET: {
+    summaryText:
+      "🏏 **Match Update:** Virat Kohli smashes his 80th international century! India declares at 450/4 against Australia. What an innings! 🇮🇳",
+    imageUrl: "🏏",
+    actionText: "View Scorecard",
+  },
+  SPORTS_FOOTBALL: {
+    summaryText:
+      "⚽ **Goal Alert:** Haaland scores a stunning hat-trick in the Manchester Derby! City leads 3-0 at halftime. 🔵",
+    imageUrl: "⚽",
+    actionText: "Watch Highlights",
+  },
+  SPORTS_BASKETBALL: {
+    summaryText:
+      "🏀 **Buzzer Beater:** LeBron James hits a game-winning 3-pointer as the Lakers edge past the Warriors 112-110! 👑",
+    imageUrl: "🏀",
+    actionText: "See Replay",
+  },
+  SPORTS_TENNIS: {
+    summaryText:
+      "🎾 **Grand Slam:** Djokovic survives a 5-set thriller to reach the Wimbledon final! 'One of my toughest matches,' he says.",
+    imageUrl: "🎾",
+    actionText: "Match Stats",
+  },
+  SPORTS_F1: {
+    summaryText:
+      "🏎️ **Pole Position:** Max Verstappen snatches pole at Monaco by just 0.08s! Leclerc starts P2 in his home race. 🏁",
+    imageUrl: "🏎️",
+    actionText: "Starting Grid",
+  },
+  SPORTS_GOLF: {
+    summaryText:
+      "⛳ **Masters Update:** Rory McIlroy charges up the leaderboard with a stunning 64 in the final round!",
+    imageUrl: "⛳",
+    actionText: "Leaderboard",
+  },
+  SPORTS_BADMINTON: {
+    summaryText:
+      "🏸 **Finals Day:** PV Sindhu storms into the finals of the World Championships! Match starts at 2 PM IST.",
+    imageUrl: "🏸",
+    actionText: "Live Updates",
+  },
+  SPORTS_KABADDI: {
+    summaryText:
+      "🤼 **PKL Action:** Pardeep Narwal pulls off a massive 5-point Super Raid! Patna Pirates take the lead.",
+    imageUrl: "🤼",
+    actionText: "Watch Raid",
+  },
+  SPORTS_ESPORTS: {
+    summaryText:
+      "🎮 **Valorant Champions:** Sentinels pull off an insane comeback on Map 3 to win the series! TenZ drops 30 kills.",
+    imageUrl: "🎮",
+    actionText: "View Clips",
+  },
+  SPORTS_OTHER: {
+    summaryText:
+      "🏅 **Sports Update:** Highlights from the latest championships in your selected sport are now available.",
+    imageUrl: "🏅",
+    actionText: "Read More",
+  },
+
+  // --- Movies & TV Sub-Categories ---
+  MOVIESTV_HOLLYWOOD: {
+    summaryText:
+      "🎬 **Box Office:** 'Dune: Part Two' crushes expectations with a huge opening weekend. Critics are calling it a 'Sci-Fi Masterpiece'.",
+    imageUrl: "🏜️",
+    actionText: "Read Reviews",
+  },
+  MOVIESTV_BOLLYWOOD: {
+    summaryText:
+      "🕺 **Blockbuster Alert:** SRK's 'Jawan' trailer is out! High-octane action and a never-seen-before avatar. Fans are going crazy! 🔥",
+    imageUrl: "🎥",
+    actionText: "Watch Trailer",
+  },
+  MOVIESTV_REGIONAL: {
+    summaryText:
+      "🎞️ **Regional Cinema:** The highly anticipated Tamil thriller 'Leo' has just announced its release date. Check out the new poster!",
+    imageUrl: "🦁",
+    actionText: "View Poster",
+  },
+  MOVIESTV_TV: {
+    summaryText:
+      "📺 **Season Finale:** 'House of the Dragon' ends with a shocking cliffhanger! Here's a recap of everything you missed (Spoiler Free). 🐉",
+    imageUrl: "📺",
+    actionText: "Read Recap",
+  },
+  MOVIESTV_DOCS: {
+    summaryText:
+      "🌍 **Now Streaming:** 'Planet Earth III' is now available. Sir David Attenborough returns to narrate the wonders of our natural world. 🌱",
+    imageUrl: "🦁",
+    actionText: "Watch Trailer",
+  },
+
+  // --- News Sub-Categories ---
+  NEWS_TECH: {
+    summaryText:
+      "🤖 **AI Breakthrough:** A new model can now generate video from text in seconds. Is this the future of filmmaking? 💻",
+    imageUrl: "🤖",
+    actionText: "Read Story",
+  },
+  NEWS_FINANCE: {
+    summaryText:
+      "💹 **Market Rally:** Sensex hits an all-time high as tech stocks surge! Here are the top gainers of the day. 📈",
+    imageUrl: "💹",
+    actionText: "Market Report",
+  },
+  NEWS_WORLD: {
+    summaryText:
+      "🌍 **Global Summit:** Leaders gather in Paris today to discuss the new climate agreement. Key decisions expected by evening.",
+    imageUrl: "🌐",
+    actionText: "Live Updates",
+  },
+  NEWS_SCIENCE: {
+    summaryText:
+      "🚀 **Space News:** NASA's James Webb Telescope captures a stunning image of a star being born in the Orion Nebula. ✨",
+    imageUrl: "🔭",
+    actionText: "View Image",
+  },
+  NEWS_HEALTH: {
+    summaryText:
+      "🥗 **Wellness Tip:** New study suggests that 15 minutes of daily mindfulness can significantly reduce stress levels. 🧘",
+    imageUrl: "🧘",
+    actionText: "Read Study",
+  },
+  NEWS_POLITICS: {
+    summaryText:
+      "🗳️ **Election Update:** Polls have closed in the key swing states. Early counting suggests a tight race! 📊",
+    imageUrl: "🗳️",
+    actionText: "Live Results",
+  },
+  NEWS_ENVIRONMENT: {
+    summaryText:
+      "🌱 **Green Tech:** Scientists have developed a new biodegradable plastic made entirely from algae. A win for the oceans! 🌊",
+    imageUrl: "♻️",
+    actionText: "Learn More",
+  },
+  NEWS_EDUCATION: {
+    summaryText:
+      "🎓 **Student News:** New scholarship program announced for STEM students. Applications open next week!",
+    imageUrl: "🎓",
+    actionText: "Apply Now",
+  },
+  NEWS_LOCAL: {
+    summaryText:
+      "🏘️ **City Update:** The new metro line opens this Friday! Expect faster commutes to the downtown area. 🚇",
+    imageUrl: "🏙️",
+    actionText: "See Map",
   },
 };
 
@@ -305,6 +457,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               },
               { id: "updateType_tactical", label: "Tactical Analysis" },
               { id: "updateType_highlights", label: "Highlight Links" },
+              { id: "football_updateType_trivia", label: "Interesting Trivia" },
+              { id: "football_updateType_nopref", label: "No Preference" },
             ],
             hasOtherOption: true,
           },
@@ -358,6 +512,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "bball_content_interviews", label: "Player Interviews" },
               { id: "bball_content_trades", label: "Trade Rumors" },
               { id: "bball_content_analysis", label: "Deep Analysis" },
+              { id: "bball_contentType_trivia", label: "Interesting Trivia" },
+              { id: "bball_contentType_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -405,6 +561,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
                 label: "Key moments (e.g., break points)",
               },
               { id: "tennis_focus_summary", label: "Full match summary" },
+              { id: "tennis_matchFocus_trivia", label: "Interesting Trivia" },
+              { id: "tennis_matchFocus_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -498,6 +656,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "golf_update_holeinone", label: "Hole-in-one alerts" },
               { id: "golf_update_leader", label: "Leader changes" },
               { id: "golf_update_favs", label: "My favorite players only" },
+              { id: "golf_updateType_trivia", label: "Interesting Trivia" },
+              { id: "golf_updateType_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -549,6 +709,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
                 id: "badminton_news_indian",
                 label: "News about Indian players",
               },
+              { id: "badminton_newsType_trivia", label: "Interesting Trivia" },
+              { id: "badminton_newsType_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -643,6 +805,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
                 id: "esports_news_patches",
                 label: "Major game updates/patches",
               },
+              { id: "esports_newsType_trivia", label: "Interesting Trivia" },
+              { id: "esports_newsType_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -708,6 +872,17 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
           {
             id: "hollywood_favs",
             text: "Any favorite actors or directors I should track for you?",
+            predefinedAnswerTags: [
+              { id: "hollywood_actor_leo", label: "Leonardo DiCaprio" },
+              { id: "hollywood_actor_zendaya", label: "Zendaya" },
+              { id: "hollywood_actor_rock", label: "Dwayne Johnson" },
+              { id: "hollywood_actor_robbie", label: "Margot Robbie" },
+              { id: "hollywood_director_nolan", label: "Christopher Nolan" },
+              {
+                id: "hollywood_director_tarantino",
+                label: "Quentin Tarantino",
+              },
+            ],
             hasOtherOption: true,
           },
           {
@@ -752,6 +927,14 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
           {
             id: "bollywood_favs",
             text: "Any favorite actors or directors in Bollywood?",
+            predefinedAnswerTags: [
+              { id: "bwood_actor_srk", label: "Shah Rukh Khan" },
+              { id: "bwood_actor_alia", label: "Alia Bhatt" },
+              { id: "bwood_actor_deepika", label: "Deepika Padukone" },
+              { id: "bwood_actor_akshay", label: "Akshay Kumar" },
+              { id: "bwood_director_hirani", label: "Rajkumar Hirani" },
+              { id: "bwood_director_bhansali", label: "Sanjay Leela Bhansali" },
+            ],
             hasOtherOption: true,
           },
           {
@@ -814,6 +997,14 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
           {
             id: "regional_favs",
             text: "Any favorite actors or directors I should track for you in regional cinema?",
+            predefinedAnswerTags: [
+              { id: "regional_actor_rajini", label: "Rajinikanth" },
+              { id: "regional_actor_prabhas", label: "Prabhas" },
+              { id: "regional_actor_yash", label: "Yash" },
+              { id: "regional_actor_allu", label: "Allu Arjun" },
+              { id: "regional_director_rajamouli", label: "S.S. Rajamouli" },
+              { id: "regional_director_ratnam", label: "Mani Ratnam" },
+            ],
             hasOtherOption: true,
           },
         ],
@@ -904,6 +1095,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
                 id: "docs_format_short",
                 label: "Short documentaries (< 40 mins)",
               },
+              { id: "docs_format_trivia", label: "Interesting Trivia" },
+              { id: "docs_format_nopref", label: "No Preference" },
             ],
           },
           {
@@ -959,6 +1152,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "tech_vibe_breaking", label: "⚡ Breaking news" },
               { id: "tech_vibe_deepdives", label: "🧠 Deep dives" },
               { id: "tech_vibe_explainers", label: "😄 Fun explainers" },
+              { id: "tech_vibe_trivia", label: "🤓 Interesting Trivia" },
+              { id: "tech_vibe_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -994,6 +1189,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "finance_insights_trends", label: "📊 Daily trends" },
               { id: "finance_insights_expert", label: "💡 Expert takes" },
               { id: "finance_insights_founder", label: "🧑‍💼 Founder stories" },
+              { id: "finance_insights_trivia", label: "🤓 Interesting Trivia" },
+              { id: "finance_insights_nopref", label: "No Preference" },
             ],
           },
           {
@@ -1041,6 +1238,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "world_update_economy", label: "💱 Economy" },
               { id: "world_update_diplomacy", label: "🕊️ Diplomacy" },
               { id: "world_update_conflicts", label: "🔥 Conflicts" },
+              { id: "world_updateType_trivia", label: "🤓 Interesting Trivia" },
+              { id: "world_updateType_nopref", label: "No Preference" },
             ],
           },
           {
@@ -1093,6 +1292,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "sci_story_discoveries", label: "🧪 Discoveries" },
               { id: "sci_story_experiments", label: "🧤 Experiments" },
               { id: "sci_story_debates", label: "💭 Debates" },
+              { id: "sci_storyType_trivia", label: "🤓 Interesting Trivia" },
+              { id: "sci_storyType_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -1128,6 +1329,11 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "health_content_lifestyle", label: "🌿 Lifestyle tips" },
               { id: "health_content_studies", label: "📚 Studies & data" },
               { id: "health_content_mix", label: "⚖️ Balanced mix" },
+              {
+                id: "health_contentStyle_trivia",
+                label: "🤓 Interesting Trivia",
+              },
+              { id: "health_contentStyle_nopref", label: "No Preference" },
             ],
           },
           {
@@ -1174,6 +1380,11 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
                 id: "politics_attention_strategy",
                 label: "🧩 Strategy & power plays",
               },
+              {
+                id: "politics_attention_trivia",
+                label: "🤓 Interesting Trivia",
+              },
+              { id: "politics_attention_nopref", label: "No Preference" },
             ],
           },
           {
@@ -1224,6 +1435,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "env_angle_crises", label: "🆘 Global crises" },
               { id: "env_angle_local", label: "🏡 Local action" },
               { id: "env_angle_innovation", label: "💡 Innovation & fixes" },
+              { id: "env_angle_trivia", label: "🤓 Interesting Trivia" },
+              { id: "env_angle_nopref", label: "No Preference" },
             ],
           },
           {
@@ -1278,6 +1491,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "edu_story_success", label: "🌟 Success stories" },
               { id: "edu_story_trends", label: "📊 Trends" },
               { id: "edu_story_skills", label: "🛠️ Skill-building insights" },
+              { id: "edu_storyType_trivia", label: "🤓 Interesting Trivia" },
+              { id: "edu_storyType_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -1322,6 +1537,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
               { id: "local_tone_info", label: "📢 Informative" },
               { id: "local_tone_actionable", label: "🧭 Actionable" },
               { id: "local_tone_feelgood", label: "❤️ Feel-good" },
+              { id: "local_tone_trivia", label: "🤓 Interesting Trivia" },
+              { id: "local_tone_nopref", label: "No Preference" },
             ],
           },
         ],
@@ -1398,6 +1615,8 @@ export const INTEREST_TAG_HIERARCHY: Record<string, MainCategory> = {
           { id: "creator_live", label: "Live Streams" },
           { id: "creator_shorts", label: "YouTube Shorts" },
           { id: "creator_noextra", label: "Just the main videos" },
+          { id: "creatorInteraction_trivia", label: "Interesting Trivia" },
+          { id: "creatorInteraction_nopref", label: "No Preference" },
         ],
       },
     ],

@@ -638,7 +638,7 @@ const InterestSelectionPage: React.FC = () => {
     setValidationErrors(errors);
 
     if (Object.keys(errors).length === 0) {
-      navigate(PagePath.TUNING);
+      navigate(PagePath.FREQUENCY);
     }
   };
 
@@ -671,7 +671,7 @@ const InterestSelectionPage: React.FC = () => {
       <div className="max-w-7xl mx-auto bg-white/5 backdrop-blur-xl shadow-2xl rounded-2xl p-4 sm:p-6 md:p-10 border border-white/10 pb-36 lg:pb-10">
         <ProgressIndicator
           currentStep={1}
-          steps={["Select Interests", "Fine-Tune Feed", "Set Cadence"]}
+          steps={["Select Interests", "Set Cadence"]}
         />
 
         <header className="text-center mb-10">

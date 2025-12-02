@@ -118,8 +118,8 @@ const FrequencySettingsPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-secondary-dark to-gray-900 text-white page-fade-enter">
       <div className="max-w-xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <ProgressIndicator
-          currentStep={3}
-          steps={["Select Interests", "Fine-Tune Feed", "Set Cadence"]}
+          currentStep={2}
+          steps={["Select Interests", "Set Cadence"]}
         />
 
         <header className="text-center mb-12">
@@ -203,11 +203,11 @@ const FrequencySettingsPage: React.FC = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate(PagePath.TUNING)}
+              onClick={() => navigate(PagePath.INTERESTS)}
               className="w-full sm:w-auto text-primary-lighter/80 hover:text-white !py-3 px-6"
               leftIcon={ICONS.ARROW_LEFT}
             >
-              Back to Tuning
+              Back to Interests
             </Button>
             <Button
               type="submit"
