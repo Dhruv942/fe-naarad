@@ -8,50 +8,133 @@ export const transformAlertToApiFormat = (
   alert: Alert
 ): Omit<CreateAlertRequest, "user_id"> => {
   console.log("🔄 Transforming alert to API format:", alert);
+  console.log("🔍 Debug - Sports selectedTags:", alert.sports.selectedTags);
+  console.log("🔍 Debug - News selectedTags:", alert.news.selectedTags);
+  console.log("🔍 Debug - Movies selectedTags:", alert.moviesTV.selectedTags);
+  console.log("🔍 Debug - YouTube selectedTags:", alert.youtube.selectedTags);
+  console.log("🔍 Debug - Custom Interest Tags:", alert.customInterestTags);
 
-  // Determine main category
+  // Determine main category - default to Custom_Input if nothing selected
   let main_category: "Sports" | "News" | "Movies" | "YouTube" | "Custom_Input" =
     "Custom_Input";
   let activeCategoryData: CategorySpecificPreferences | null = null;
 
-  if (
+  // Check Sports
+  const hasSportsFollowUp =
+    alert.sports.followUpAnswers &&
+    Object.keys(alert.sports.followUpAnswers).length > 0;
+  const hasSports =
     alert.sports.selectedTags.length > 0 ||
     (alert.sports.instructionTags && alert.sports.instructionTags.length > 0) ||
-    alert.sports.otherSportName
-  ) {
-    main_category = "Sports";
-    activeCategoryData = alert.sports;
-  } else if (
+    alert.sports.otherSportName ||
+    hasSportsFollowUp;
+  console.log("🔍 Sports check:", {
+    selectedTags: alert.sports.selectedTags.length,
+    instructionTags: alert.sports.instructionTags?.length || 0,
+    otherSportName: alert.sports.otherSportName,
+    followUpAnswers: hasSportsFollowUp,
+    result: hasSports,
+  });
+
+  // Check News
+  const hasNewsFollowUp =
+    alert.news.followUpAnswers &&
+    Object.keys(alert.news.followUpAnswers).length > 0;
+  const hasNews =
     alert.news.selectedTags.length > 0 ||
-    (alert.news.instructionTags && alert.news.instructionTags.length > 0)
-  ) {
-    main_category = "News";
-    activeCategoryData = alert.news;
-  } else if (
+    (alert.news.instructionTags && alert.news.instructionTags.length > 0) ||
+    hasNewsFollowUp;
+  console.log("🔍 News check:", {
+    selectedTags: alert.news.selectedTags.length,
+    instructionTags: alert.news.instructionTags?.length || 0,
+    followUpAnswers: hasNewsFollowUp,
+    result: hasNews,
+  });
+
+  // Check Movies
+  const hasMoviesFollowUp =
+    alert.moviesTV.followUpAnswers &&
+    Object.keys(alert.moviesTV.followUpAnswers).length > 0;
+  const hasMovies =
     alert.moviesTV.selectedTags.length > 0 ||
     (alert.moviesTV.instructionTags &&
-      alert.moviesTV.instructionTags.length > 0)
-  ) {
+      alert.moviesTV.instructionTags.length > 0) ||
+    hasMoviesFollowUp;
+  console.log("🔍 Movies check:", {
+    selectedTags: alert.moviesTV.selectedTags.length,
+    instructionTags: alert.moviesTV.instructionTags?.length || 0,
+    followUpAnswers: hasMoviesFollowUp,
+    result: hasMovies,
+  });
+
+  // Check YouTube
+  const hasYouTubeFollowUp =
+    alert.youtube.followUpAnswers &&
+    Object.keys(alert.youtube.followUpAnswers).length > 0;
+  const hasYouTube =
+    alert.youtube.selectedTags.length > 0 ||
+    (alert.youtube.instructionTags &&
+      alert.youtube.instructionTags.length > 0) ||
+    hasYouTubeFollowUp;
+  console.log("🔍 YouTube check:", {
+    selectedTags: alert.youtube.selectedTags.length,
+    instructionTags: alert.youtube.instructionTags?.length || 0,
+    followUpAnswers: hasYouTubeFollowUp,
+    result: hasYouTube,
+  });
+
+  // Check Custom Input
+  const hasCustomInput = alert.customInterestTags.length > 0;
+  console.log("🔍 Custom Input check:", {
+    customInterestTags: alert.customInterestTags.length,
+    result: hasCustomInput,
+  });
+
+  if (hasSports) {
+    main_category = "Sports";
+    activeCategoryData = alert.sports;
+    console.log("✅ Selected: Sports");
+  } else if (hasNews) {
+    main_category = "News";
+    activeCategoryData = alert.news;
+    console.log("✅ Selected: News");
+  } else if (hasMovies) {
     main_category = "Movies";
     activeCategoryData = alert.moviesTV;
-  } else if (
-    alert.youtube.selectedTags.length > 0 ||
-    (alert.youtube.instructionTags && alert.youtube.instructionTags.length > 0)
-  ) {
+    console.log("✅ Selected: Movies");
+  } else if (hasYouTube) {
     main_category = "YouTube";
     activeCategoryData = alert.youtube;
-  } else if (alert.customInterestTags.length > 0) {
+    console.log("✅ Selected: YouTube");
+  } else if (hasCustomInput) {
     main_category = "Custom_Input";
+    console.log("✅ Selected: Custom_Input");
+  } else {
+    console.log("⚠️ No category selected, defaulting to Custom_Input");
   }
 
-  console.log("📋 Detected main_category:", main_category);
+  const finalMainCategory = main_category;
+
+  console.log("📋 Detected main_category:", finalMainCategory);
 
   // Collect sub_categories (selected tags from the active category)
-  const sub_categories: string[] = activeCategoryData?.selectedTags || [];
+  let sub_categories: string[] = [];
 
-  // Add other sport name if applicable
-  if (main_category === "Sports" && alert.sports.otherSportName) {
-    sub_categories.push(alert.sports.otherSportName);
+  if (finalMainCategory === "Custom_Input") {
+    // For Custom_Input, use customInterestTags as sub_categories
+    sub_categories = alert.customInterestTags || [];
+    console.log(
+      "✨ Custom_Input: Using customInterestTags as sub_categories:",
+      sub_categories
+    );
+  } else {
+    // For other categories, use selectedTags from active category
+    sub_categories = activeCategoryData?.selectedTags || [];
+
+    // Add other sport name if applicable
+    if (finalMainCategory === "Sports" && alert.sports.otherSportName) {
+      sub_categories.push(alert.sports.otherSportName);
+    }
   }
 
   console.log("🏷️ Sub categories:", sub_categories);
@@ -144,26 +227,22 @@ export const transformAlertToApiFormat = (
     console.log("⚠️ No AI follow-up questions found");
   }
 
-  // For Custom_Input category, add custom interest tags
-  if (main_category === "Custom_Input" && alert.customInterestTags.length > 0) {
-    console.log(
-      "✨ Adding custom interest tags for Custom_Input:",
-      alert.customInterestTags
-    );
-    custom_question_parts.push(...alert.customInterestTags);
-  }
+  // For Custom_Input category, custom interest tags are already in sub_categories
+  // Only add instruction tags or AI questions to custom_question if they exist
+  // (Note: Custom_Input typically doesn't have instructionTags or aiFollowUpQuestions,
+  // but we check just in case)
 
   const custom_question = custom_question_parts.join(" | ");
 
   console.log("💬 Final custom_question parts:", custom_question_parts);
   console.log("💬 Final custom_question string:", custom_question);
 
-  // Build transformed object with only non-empty optional fields
+  // Build transformed object
   const transformed: Omit<CreateAlertRequest, "user_id"> = {
-    main_category,
+    main_category: finalMainCategory,
   };
 
-  // Only include optional fields if they have values
+  // Include optional fields - use empty arrays if they have values
   if (sub_categories.length > 0) {
     transformed.sub_categories = sub_categories;
   }
@@ -172,9 +251,8 @@ export const transformAlertToApiFormat = (
     transformed.followup_questions = followup_questions;
   }
 
-  if (custom_question.trim().length > 0) {
-    transformed.custom_question = custom_question;
-  }
+  // Always include custom_question as empty string (not null) if user didn't provide anything
+  transformed.custom_question = custom_question.trim() || "";
 
   console.log("✅ Transformation complete:", transformed);
 

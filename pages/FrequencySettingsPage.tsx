@@ -141,25 +141,33 @@ const FrequencySettingsPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {frequencyOptions.map((freq) => {
                   const isDisabled = freq !== UpdateFrequency.REAL_TIME;
+                  const isSelected = activeAlert.frequency === freq;
 
                   return (
                     <div key={freq} className="relative h-full">
-                      <TagButton
-                        label={freq}
-                        isSelected={activeAlert.frequency === freq}
-                        onClick={() => handleFrequencyTagSelect(freq)}
-                        size="lg"
-                        color="bg-gray-700/50 hover:bg-gray-700"
-                        textColor="text-gray-100"
-                        selectedColor="bg-primary ring-2 ring-primary-dark shadow-lg"
-                        selectedTextColor="text-white"
-                        className={`!rounded-lg w-full h-full justify-center !py-3 !px-2 sm:!px-4 whitespace-nowrap text-xs sm:text-sm ${
-                          isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          !isDisabled && handleFrequencyTagSelect(freq)
+                        }
+                        disabled={isDisabled}
+                        className={`
+                          w-full h-full rounded-lg py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium
+                          transition-all duration-200 whitespace-nowrap
+                          ${
+                            isSelected && !isDisabled
+                              ? "bg-primary text-white ring-2 ring-primary-dark shadow-lg"
+                              : isDisabled
+                              ? "bg-gray-700/30 text-gray-400 cursor-not-allowed opacity-60"
+                              : "bg-gray-700/50 text-gray-100 hover:bg-gray-700"
+                          }
+                        `}
+                      >
+                        {freq}
+                      </button>
                       {isDisabled && (
-                        <div className="absolute bottom-1 left-0 right-0 flex items-center justify-center pointer-events-none">
-                          <span className="text-xs text-yellow-300 whitespace-nowrap">
+                        <div className="absolute -bottom-1 left-0 right-0 flex items-center justify-center pointer-events-none">
+                          <span className="text-[10px] text-yellow-400/90 whitespace-nowrap font-medium">
                             Coming Soon
                           </span>
                         </div>

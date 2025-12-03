@@ -940,16 +940,7 @@ const InterestSelectionPage: React.FC = () => {
                                 }
                               }
 
-                              const noPreferenceTag: TagType = {
-                                id: `${question.id}_nopref`,
-                                label: "No Preference",
-                              };
-                              const allDisplayTags = [
-                                ...dynamicPredefinedTags,
-                                ...(!question.isSingleSelect
-                                  ? [noPreferenceTag]
-                                  : []),
-                              ];
+                              const allDisplayTags = [...dynamicPredefinedTags];
 
                               return (
                                 <div key={question.id}>
