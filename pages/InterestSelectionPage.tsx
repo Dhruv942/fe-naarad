@@ -60,14 +60,68 @@ const InterestSelectionPage: React.FC = () => {
     Record<string, string>
   >({});
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  
+  // Track if we've already auto-expanded for edit mode
+  const hasAutoExpanded = React.useRef(false);
 
   const mainCategoriesArray = Object.values(INTEREST_TAG_HIERARCHY);
 
   useEffect(() => {
-    if (!activeAlert) {
+    console.log("\n🔍 InterestSelectionPage - Active Alert Check:");
+    console.log("Active Alert:", activeAlert);
+    
+    if (activeAlert) {
+      console.log("✅ Active alert exists");
+      console.log("Sports selectedTags:", activeAlert.sports?.selectedTags);
+      console.log("Sports followUpAnswers:", activeAlert.sports?.followUpAnswers);
+      console.log("MoviesTV selectedTags:", activeAlert.moviesTV?.selectedTags);
+      console.log("News selectedTags:", activeAlert.news?.selectedTags);
+      console.log("Custom Interest Tags:", activeAlert.customInterestTags);
+    } else {
+      console.log("❌ No active alert, redirecting to dashboard");
       navigate(PagePath.DASHBOARD);
     }
   }, [activeAlert, navigate]);
+  
+  // Auto-expand category in edit mode
+  useEffect(() => {
+    if (!activeAlert || hasAutoExpanded.current) return;
+    
+    const isEditMode = localStorage.getItem("editing_alert_id");
+    if (!isEditMode) return;
+    
+    console.log("\n🎯 Edit mode detected - auto-expanding categories");
+    hasAutoExpanded.current = true;
+    
+    // Find first category with selected tags
+    const categoryMap: Array<{ key: string; stateKey: STCKType }> = [
+      { key: 'SPORTS', stateKey: 'sports' },
+      { key: 'MOVIESTV', stateKey: 'moviesTV' },
+      { key: 'NEWS', stateKey: 'news' },
+      { key: 'YOUTUBE', stateKey: 'youtube' },
+    ];
+    
+    for (const { key, stateKey } of categoryMap) {
+      const categoryData = activeAlert[stateKey] as CategorySpecificPreferences;
+      if (categoryData?.selectedTags && categoryData.selectedTags.length > 0) {
+        const mainCategory = INTEREST_TAG_HIERARCHY[key];
+        console.log(`✅ Auto-expanding category: ${key} (has ${categoryData.selectedTags.length} selected tags)`);
+        setActiveMainCategory(mainCategory.id);
+        
+        // Also auto-expand first selected subcategory
+        const firstSelectedTag = categoryData.selectedTags[0];
+        console.log(`✅ Auto-expanding subcategory for tag: ${firstSelectedTag}`);
+        setActiveSubCategory(firstSelectedTag);
+        return; // Stop after first match
+      }
+    }
+    
+    // Check for custom interest tags
+    if (activeAlert.customInterestTags && activeAlert.customInterestTags.length > 0) {
+      console.log(`✅ Auto-expanding Custom Interests (has ${activeAlert.customInterestTags.length} tags)`);
+      setActiveMainCategory('custom');
+    }
+  }, [activeAlert]);
 
   // This effect handles scrolling to the first validation error after a submission attempt.
   useEffect(() => {

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { usePreferences } from "../contexts/PreferencesContext";
+import { useNavigate } from "react-router-dom";
 import Button from "../components/common/Button";
 import SectionCard from "../components/common/SectionCard";
-import { ICONS } from "../constants";
-import { getAlertsByUserId, deleteAlertById, AlertItem } from "../services/api";
+import { ICONS, PagePath, INTEREST_TAG_HIERARCHY } from "../constants";
+import { getAlertsByUserId, deleteAlertById, toggleAlertById, AlertItem } from "../services/api";
 
 const getTagTextColor = (backgroundColor: string): string => {
   if (backgroundColor.includes("orange")) return "text-orange-700";
@@ -37,8 +38,41 @@ const DisplayDetailTag: React.FC<{
   );
 };
 
+// Helper function to find question ID from question text
+const findQuestionIdByText = (questionText: string, categoryKey: string): string | null => {
+  console.log(`🔍 Looking for question: "${questionText}" in category: ${categoryKey}`);
+  
+  const category = INTEREST_TAG_HIERARCHY[categoryKey.toUpperCase()];
+  
+  if (!category?.subCategories) {
+    console.log(`❌ No subcategories found for ${categoryKey.toUpperCase()}`);
+    return null;
+  }
+  
+  console.log(`📂 Found ${category.subCategories.length} subcategories`);
+  
+  // Search through all subcategories
+  for (const subCat of category.subCategories) {
+    if (subCat.followUpQuestions) {
+      console.log(`  🔎 Checking subcategory: ${subCat.label} (${subCat.followUpQuestions.length} questions)`);
+      
+      const match = subCat.followUpQuestions.find(
+        (q: any) => q.text === questionText
+      );
+      if (match) {
+        console.log(`  ✅ Found match! Question ID: ${match.id}`);
+        return match.id;
+      }
+    }
+  }
+  
+  console.log(`❌ No match found for question: "${questionText}"`);
+  return null;
+};
+
 const DashboardPage: React.FC = () => {
-  const { user, logout, startNewAlert } = usePreferences();
+  const { user, logout, startNewAlert, setActiveAlert } = usePreferences();
+  const navigate = useNavigate();
   const [apiAlerts, setApiAlerts] = useState<any[]>([]);
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
   const [alertsError, setAlertsError] = useState<string | null>(null);
@@ -124,6 +158,159 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleToggleAlert = async (alertId: string, currentIsActive: boolean) => {
+    // Try to get user_id from localStorage first, then from user context
+    let userId = localStorage.getItem("user_id");
+    
+    if (!userId && user.user_id) {
+      userId = user.user_id;
+      localStorage.setItem("user_id", userId);
+    }
+
+    if (!userId) {
+      alert("User ID not found. Please login again.");
+      return;
+    }
+
+    try {
+      const action = currentIsActive ? "pause" : "activate";
+      console.log(`⏯️ Toggling alert (${action}):`, alertId, "for user:", userId);
+      
+      const response = await toggleAlertById(userId, alertId, currentIsActive);
+
+      if (response.success) {
+        console.log(`✅ Alert ${action}d successfully`);
+        // Update alert in UI
+        setApiAlerts(apiAlerts.map((alert) => 
+          alert.alert_id === alertId 
+            ? { ...alert, is_active: !currentIsActive }
+            : alert
+        ));
+      } else {
+        console.error(`❌ Failed to ${action} alert:`, response.error);
+        alert(response.error || `Failed to ${action} alert`);
+      }
+    } catch (error) {
+      console.error("❌ Error toggling alert:", error);
+      alert(error instanceof Error ? error.message : "An error occurred");
+    }
+  };
+
+  const handleEditAlert = (apiAlert: AlertItem) => {
+    console.log("\n==================== EDIT ALERT START ====================");
+    console.log("✏️ Original API alert:", JSON.stringify(apiAlert, null, 2));
+    
+    // Store the alert_id in localStorage for the edit flow
+    localStorage.setItem("editing_alert_id", apiAlert.alert_id);
+    console.log("💾 Stored editing_alert_id:", apiAlert.alert_id);
+    
+    // Initialize empty alert data with all category structures
+    const editAlert: any = {
+      id: apiAlert.alert_id,
+      name: `${apiAlert.main_category} Alert`,
+      sports: { selectedTags: [], followUpAnswers: {}, instructionTags: [], otherSportName: undefined, aiFollowUpQuestions: [], aiQuestionsAttempted: false },
+      moviesTV: { selectedTags: [], followUpAnswers: {}, instructionTags: [], aiFollowUpQuestions: [], aiQuestionsAttempted: false },
+      news: { selectedTags: [], followUpAnswers: {}, instructionTags: [], aiFollowUpQuestions: [], aiQuestionsAttempted: false },
+      youtube: { selectedTags: [], followUpAnswers: {}, instructionTags: [], aiFollowUpQuestions: [], aiQuestionsAttempted: false },
+      customInterestTags: [],
+      frequency: apiAlert.frequency === "realtime" ? "Real-time" : apiAlert.frequency || "Real-time",
+      customFrequencyTime: apiAlert.customFrequencyTime,
+      isActive: apiAlert.is_active,
+      tuningFeedback: { liked: [], disliked: [] },
+    };
+
+    // Handle Custom Input category
+    if (apiAlert.main_category === "Custom_Input") {
+      editAlert.customInterestTags = apiAlert.sub_categories || [];
+      console.log("📝 Set customInterestTags:", editAlert.customInterestTags);
+    } else {
+      // Map API category to frontend category key
+      const categoryMap: Record<string, 'sports' | 'moviesTV' | 'news' | 'youtube'> = {
+        'Sports': 'sports',
+        'Movies': 'moviesTV',
+        'News': 'news',
+        'YouTube': 'youtube',
+      };
+      
+      const targetCategory = categoryMap[apiAlert.main_category];
+      
+      if (targetCategory) {
+        // Convert sub_categories (like "Cricket", "Football") to tag IDs (like "sports_cricket")
+        const selectedTags: string[] = [];
+        const category = INTEREST_TAG_HIERARCHY[apiAlert.main_category.toUpperCase()];
+        
+        if (category?.subCategories && apiAlert.sub_categories) {
+          apiAlert.sub_categories.forEach((subCatLabel) => {
+            const subCat = category.subCategories?.find(
+              (sc: any) => sc.label.toLowerCase() === subCatLabel.toLowerCase()
+            );
+            if (subCat) {
+              selectedTags.push(subCat.id);
+              console.log(`✅ Converted "${subCatLabel}" → "${subCat.id}"`);
+            } else {
+              // If not found in hierarchy, add as-is (might be custom tag)
+              selectedTags.push(subCatLabel);
+              console.log(`⚠️ Could not find subcategory for "${subCatLabel}", adding as-is`);
+            }
+          });
+        }
+        
+        editAlert[targetCategory].selectedTags = selectedTags;
+        console.log(`📝 Set ${targetCategory}.selectedTags:`, selectedTags);
+        
+        // Convert followup_questions back to followUpAnswers format
+        if (apiAlert.followup_questions && apiAlert.followup_questions.length > 0) {
+          const followUpAnswers: any = {};
+          
+          apiAlert.followup_questions.forEach((fq) => {
+            // Find the question ID by exact text match from constants
+            const questionId = findQuestionIdByText(fq.question, targetCategory);
+            
+            if (questionId) {
+              // Parse the selected answer (could be comma-separated)
+              const selectedAnswers = fq.selected_answer
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+              
+              followUpAnswers[questionId] = {
+                selectedPredefinedTags: selectedAnswers,
+                customAnswerViaOther: undefined,
+              };
+              
+              console.log(`✅ Mapped question "${fq.question}" to ${questionId}:`, selectedAnswers);
+            } else {
+              console.warn(`⚠️ Could not find question ID for: "${fq.question}"`);
+            }
+          });
+          
+          if (Object.keys(followUpAnswers).length > 0) {
+            editAlert[targetCategory].followUpAnswers = followUpAnswers;
+            console.log(`📝 Set ${targetCategory}.followUpAnswers:`, followUpAnswers);
+          }
+        }
+        
+        // Convert custom_question to instructionTags if present
+        if (apiAlert.custom_question && apiAlert.custom_question.trim()) {
+          // For now, store as a custom instruction tag
+          // In a real app, you might want to parse this more intelligently
+          editAlert[targetCategory].instructionTags = [apiAlert.custom_question];
+          console.log(`📝 Set ${targetCategory}.instructionTags:`, [apiAlert.custom_question]);
+        }
+      }
+    }
+
+    console.log("\n📝 Final converted alert:");
+    console.log(JSON.stringify(editAlert, null, 2));
+    console.log("==================== EDIT ALERT END ====================\n");
+    
+    setActiveAlert(editAlert);
+    console.log("✅ Set active alert in context");
+    
+    navigate(PagePath.INTERESTS);
+    console.log("🔄 Navigating to interests page");
+  };
+
   useEffect(() => {
     fetchAlerts();
   }, []);
@@ -201,6 +388,15 @@ const DashboardPage: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Button
+                        onClick={() => handleEditAlert(apiAlert)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:bg-primary-lightest text-sm sm:text-base"
+                        leftIcon={ICONS.EDIT}
+                      >
+                        Edit
+                      </Button>
+                      <Button
                         onClick={() => handleDeleteAlert(apiAlert.alert_id)}
                         variant="ghost"
                         size="sm"
@@ -212,13 +408,32 @@ const DashboardPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="space-y-3 sm:space-y-4">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-3">
                       <strong className="font-medium text-gray-500 text-xs sm:text-sm">
                         Status:
                       </strong>
-                      <span className="font-semibold text-green-700 text-sm sm:text-base">
-                        Active
+                      <div className="flex items-center gap-2">
+                        {/* Toggle Switch */}
+                        <button
+                          onClick={() => handleToggleAlert(apiAlert.alert_id, apiAlert.is_active)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                            apiAlert.is_active ? 'bg-green-500' : 'bg-gray-300'
+                          }`}
+                          role="switch"
+                          aria-checked={apiAlert.is_active}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              apiAlert.is_active ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        <span className={`font-semibold text-sm sm:text-base ${
+                          apiAlert.is_active ? 'text-green-700' : 'text-gray-500'
+                        }`}>
+                          {apiAlert.is_active ? 'Active' : 'Paused'}
                       </span>
+                      </div>
                     </div>
                     {apiAlert.frequency && (
                       <div className="flex flex-wrap items-center gap-2">

@@ -7,7 +7,7 @@ import SectionCard from "../components/common/SectionCard";
 import ProgressIndicator from "../components/common/ProgressIndicator";
 import { ICONS, PagePath } from "../constants";
 import { UpdateFrequency, Alert } from "../types";
-import { createAlert } from "../services/api";
+import { createAlert, updateAlertById } from "../services/api";
 import { transformAlertToApiFormat } from "../utils/alertTransformer";
 
 const FrequencySettingsPage: React.FC = () => {
@@ -84,32 +84,68 @@ const FrequencySettingsPage: React.FC = () => {
 
       console.log("✅ User ID found:", userId);
 
-      console.log("📤 Creating alert with user_id:", userId);
+      // Check if we're in edit mode
+      const editingAlertId = localStorage.getItem("editing_alert_id");
+      const isEditMode = !!editingAlertId;
+
+      console.log(
+        isEditMode ? "📝 Updating alert" : "📤 Creating alert",
+        "with user_id:",
+        userId
+      );
       console.log("📦 Active alert data:", activeAlert);
 
       // Transform alert to API format
       const alertData = transformAlertToApiFormat(activeAlert);
       console.log("🔄 Transformed alert data:", alertData);
 
-      // Call backend API to create alert
-      const response = await createAlert({
-        ...alertData,
-        user_id: userId,
-      });
+      let response;
+
+      if (isEditMode) {
+        // Update existing alert
+        console.log("✏️ Updating alert ID:", editingAlertId);
+        response = await updateAlertById(userId, editingAlertId, {
+          ...alertData,
+          user_id: userId,
+        });
+      } else {
+        // Create new alert
+        response = await createAlert({
+          ...alertData,
+          user_id: userId,
+        });
+      }
 
       console.log("📥 Backend response:", response);
 
       if (response.success) {
         // Save to local state as well
         saveActiveAlert();
-        alert("Alert Saved! You're all set. Redirecting to your dashboard...");
+        
+        // Clear edit mode flag
+        if (isEditMode) {
+          localStorage.removeItem("editing_alert_id");
+        }
+        
+        alert(
+          isEditMode
+            ? "Alert Updated! Redirecting to your dashboard..."
+            : "Alert Saved! You're all set. Redirecting to your dashboard..."
+        );
         navigate(PagePath.DASHBOARD);
       } else {
-        console.error("❌ Failed to create alert:", response.error);
-        alert(`Failed to save alert: ${response.error || "Unknown error"}`);
+        console.error(
+          `❌ Failed to ${isEditMode ? "update" : "create"} alert:`,
+          response.error
+        );
+        alert(
+          `Failed to ${isEditMode ? "update" : "save"} alert: ${
+            response.error || "Unknown error"
+          }`
+        );
       }
     } catch (error) {
-      console.error("❌ Error creating alert:", error);
+      console.error("❌ Error saving alert:", error);
       alert("An error occurred while saving your alert. Please try again.");
     }
   };
