@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://naaradupdates.info:3000";
+const API_BASE_URL = "https://naaradupdates.info";
 
 export interface LoginRequest {
   email: string;
