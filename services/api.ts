@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://naarad-node-qkz7.onrender.com";
+const API_BASE_URL = "http://naaradupdates.info:3000";
 
 export interface LoginRequest {
   email: string;
@@ -21,11 +21,17 @@ export interface LoginResponse {
   error?: string;
 }
 
+export interface FollowUpQuestion {
+  question: string;
+  selected_answer: string;
+  options: string[];
+}
+
 export interface AlertItem {
   alert_id: string;
   main_category: string;
   sub_categories: string[];
-  followup_questions: string[];
+  followup_questions: FollowUpQuestion[];
   custom_question: string;
   user_id: string;
   frequency?: string;
@@ -132,7 +138,7 @@ export interface CreateAlertRequest {
   user_id: string; // Required
   main_category: "Sports" | "News" | "Movies" | "YouTube" | "Custom_Input"; // Required
   sub_categories?: string[]; // Optional
-  followup_questions?: string[]; // Optional
+  followup_questions?: FollowUpQuestion[]; // Optional - array of question objects
   custom_question?: string; // Optional
 }
 

@@ -260,7 +260,7 @@ const DashboardPage: React.FC = () => {
                             {apiAlert.followup_questions.map((q, idx) => (
                               <DisplayDetailTag
                                 key={idx}
-                                label={q}
+                                label={typeof q === 'string' ? q : q.selected_answer}
                                 color="accent-teal-light"
                               />
                             ))}

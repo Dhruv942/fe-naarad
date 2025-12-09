@@ -1,5 +1,6 @@
 import { Alert, CategorySpecificPreferences } from "../types";
-import { CreateAlertRequest } from "../services/api";
+import { CreateAlertRequest, FollowUpQuestion } from "../services/api";
+import { INTEREST_TAG_HIERARCHY } from "../constants";
 
 /**
  * Transform frontend Alert data to backend API format
@@ -137,31 +138,143 @@ export const transformAlertToApiFormat = (
     }
   }
 
-  console.log("🏷️ Sub categories:", sub_categories);
+  console.log(
+    "🏷️ Sub categories (before followup processing):",
+    sub_categories
+  );
 
-  // Collect followup_questions (answers from predefined follow-up questions + custom answers)
-  const followup_questions: string[] = [];
+  // Collect followup_questions with full schema (question, selected_answer, answers)
+  const followup_questions: FollowUpQuestion[] = [];
+  const detectedSubCategories = new Set<string>(sub_categories); // Track subcategories
 
   if (activeCategoryData?.followUpAnswers) {
+    // Get the category constants to find question definitions
+    const categoryKey =
+      finalMainCategory === "Movies"
+        ? "MOVIES_TV"
+        : finalMainCategory.toUpperCase();
+    const categoryData = INTEREST_TAG_HIERARCHY[categoryKey];
+
     for (const questionId in activeCategoryData.followUpAnswers) {
       const answer = activeCategoryData.followUpAnswers[questionId];
 
-      // Add selected predefined tags
+      // Find the question definition in constants
+      let questionDef: any = null;
+      let allAvailableAnswers: string[] = [];
+      let subCategoryLabel: string | null = null;
+
+      console.log(`\n🔍 Processing question ID: ${questionId}`);
+
+      // Search in main category follow-up questions
+      if (categoryData?.followUpQuestions) {
+        questionDef = categoryData.followUpQuestions.find(
+          (q: any) => q.id === questionId
+        );
+        if (questionDef) {
+          console.log(`✅ Found in main category follow-up questions`);
+        }
+      }
+
+      // If not found in main category, search in subcategories
+      if (!questionDef && categoryData?.subCategories) {
+        console.log(
+          `🔎 Searching in ${categoryData.subCategories.length} subcategories...`
+        );
+        for (const subCat of categoryData.subCategories) {
+          if (subCat.followUpQuestions) {
+            questionDef = subCat.followUpQuestions.find(
+              (q: any) => q.id === questionId
+            );
+            if (questionDef) {
+              console.log(`✅ Found in subcategory: ${subCat.label}`);
+              // Track the subcategory this question belongs to
+              subCategoryLabel = subCat.label;
+
+              // Also get dynamic options if available (teams, players, etc.)
+              if (questionId === "favTeam" && subCat.popularTeams) {
+                allAvailableAnswers = subCat.popularTeams.map(
+                  (t: any) => t.label
+                );
+                console.log(
+                  `🏆 Populated ${allAvailableAnswers.length} teams from popularTeams`
+                );
+              } else if (questionId === "favPlayer" && subCat.popularPlayers) {
+                allAvailableAnswers = subCat.popularPlayers.map(
+                  (p: any) => p.label
+                );
+                console.log(
+                  `⭐ Populated ${allAvailableAnswers.length} players from popularPlayers`
+                );
+              }
+              break;
+            }
+          }
+        }
+      }
+
+      // Build the selected answer string
+      let selectedAnswer = "";
       if (
         answer.selectedPredefinedTags &&
         answer.selectedPredefinedTags.length > 0
       ) {
-        followup_questions.push(...answer.selectedPredefinedTags);
+        selectedAnswer = answer.selectedPredefinedTags.join(", ");
+      }
+      if (answer.customAnswerViaOther && answer.customAnswerViaOther.trim()) {
+        selectedAnswer = selectedAnswer
+          ? `${selectedAnswer}, ${answer.customAnswerViaOther.trim()}`
+          : answer.customAnswerViaOther.trim();
       }
 
-      // Add custom answer if provided
-      if (answer.customAnswerViaOther && answer.customAnswerViaOther.trim()) {
-        followup_questions.push(answer.customAnswerViaOther.trim());
+      // Get all available answers from predefinedAnswerTags if they exist
+      if (
+        questionDef?.predefinedAnswerTags &&
+        allAvailableAnswers.length === 0
+      ) {
+        allAvailableAnswers = questionDef.predefinedAnswerTags.map(
+          (tag: any) => tag.label
+        );
+        console.log(
+          `📝 Populated ${allAvailableAnswers.length} options from predefinedAnswerTags`
+        );
+      } else if (!questionDef?.predefinedAnswerTags) {
+        console.log(`⚠️ No predefinedAnswerTags found for this question`);
+      } else if (allAvailableAnswers.length > 0) {
+        console.log(
+          `✅ Already have ${allAvailableAnswers.length} options from dynamic source`
+        );
+      }
+
+      // Only add if we have both question and selected answer
+      if (questionDef && selectedAnswer) {
+        console.log(`📋 Adding followup question: ${questionDef.text}`);
+        console.log(`✅ Selected answer: ${selectedAnswer}`);
+        console.log(
+          `🎯 Available options: ${allAvailableAnswers.length} items`,
+          allAvailableAnswers
+        );
+
+        followup_questions.push({
+          question: questionDef.text,
+          selected_answer: selectedAnswer,
+          options: allAvailableAnswers,
+        });
+
+        // Add subcategory to the set if detected from follow-up questions
+        if (subCategoryLabel) {
+          detectedSubCategories.add(subCategoryLabel);
+          console.log(
+            `🔍 Detected subcategory from follow-up: ${subCategoryLabel}`
+          );
+        }
       }
     }
   }
 
-  console.log("❓ Follow-up questions:", followup_questions);
+  // Update sub_categories with detected subcategories from follow-up questions
+  sub_categories = Array.from(detectedSubCategories);
+  console.log("🏷️ Sub categories (after followup processing):", sub_categories);
+  console.log("❓ Follow-up questions (structured):", followup_questions);
 
   // Collect custom_question (instruction tags + AI follow-up questions)
   const custom_question_parts: string[] = [];
@@ -242,11 +355,15 @@ export const transformAlertToApiFormat = (
     main_category: finalMainCategory,
   };
 
-  // Include optional fields - use empty arrays if they have values
-  if (sub_categories.length > 0) {
+  // Always include sub_categories (even if empty) for non-Custom_Input categories
+  if (finalMainCategory !== "Custom_Input") {
+    transformed.sub_categories = sub_categories;
+  } else if (sub_categories.length > 0) {
+    // For Custom_Input, only include if there are values
     transformed.sub_categories = sub_categories;
   }
 
+  // Always include followup_questions if they exist
   if (followup_questions.length > 0) {
     transformed.followup_questions = followup_questions;
   }
