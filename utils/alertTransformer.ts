@@ -163,30 +163,21 @@ export const transformAlertToApiFormat = (
       let allAvailableAnswers: string[] = [];
       let subCategoryLabel: string | null = null;
 
-      console.log(`\n🔍 Processing question ID: ${questionId}`);
-
       // Search in main category follow-up questions
       if (categoryData?.followUpQuestions) {
         questionDef = categoryData.followUpQuestions.find(
           (q: any) => q.id === questionId
         );
-        if (questionDef) {
-          console.log(`✅ Found in main category follow-up questions`);
-        }
       }
 
       // If not found in main category, search in subcategories
       if (!questionDef && categoryData?.subCategories) {
-        console.log(
-          `🔎 Searching in ${categoryData.subCategories.length} subcategories...`
-        );
         for (const subCat of categoryData.subCategories) {
           if (subCat.followUpQuestions) {
             questionDef = subCat.followUpQuestions.find(
               (q: any) => q.id === questionId
             );
             if (questionDef) {
-              console.log(`✅ Found in subcategory: ${subCat.label}`);
               // Track the subcategory this question belongs to
               subCategoryLabel = subCat.label;
 
@@ -195,15 +186,9 @@ export const transformAlertToApiFormat = (
                 allAvailableAnswers = subCat.popularTeams.map(
                   (t: any) => t.label
                 );
-                console.log(
-                  `🏆 Populated ${allAvailableAnswers.length} teams from popularTeams`
-                );
               } else if (questionId === "favPlayer" && subCat.popularPlayers) {
                 allAvailableAnswers = subCat.popularPlayers.map(
                   (p: any) => p.label
-                );
-                console.log(
-                  `⭐ Populated ${allAvailableAnswers.length} players from popularPlayers`
                 );
               }
               break;
@@ -234,30 +219,14 @@ export const transformAlertToApiFormat = (
         allAvailableAnswers = questionDef.predefinedAnswerTags.map(
           (tag: any) => tag.label
         );
-        console.log(
-          `📝 Populated ${allAvailableAnswers.length} options from predefinedAnswerTags`
-        );
-      } else if (!questionDef?.predefinedAnswerTags) {
-        console.log(`⚠️ No predefinedAnswerTags found for this question`);
-      } else if (allAvailableAnswers.length > 0) {
-        console.log(
-          `✅ Already have ${allAvailableAnswers.length} options from dynamic source`
-        );
       }
 
       // Only add if we have both question and selected answer
       if (questionDef && selectedAnswer) {
-        console.log(`📋 Adding followup question: ${questionDef.text}`);
-        console.log(`✅ Selected answer: ${selectedAnswer}`);
-        console.log(
-          `🎯 Available options: ${allAvailableAnswers.length} items`,
-          allAvailableAnswers
-        );
-
         followup_questions.push({
           question: questionDef.text,
           selected_answer: selectedAnswer,
-          options: allAvailableAnswers,
+          answers: allAvailableAnswers,
         });
 
         // Add subcategory to the set if detected from follow-up questions

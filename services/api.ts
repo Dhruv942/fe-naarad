@@ -34,7 +34,6 @@ export interface AlertItem {
   followup_questions: FollowUpQuestion[];
   custom_question: string;
   user_id: string;
-  is_active: boolean;
   frequency?: string;
   customFrequencyTime?: string;
   // Add more fields if your API sends them
@@ -303,6 +302,13 @@ export interface DeleteAlertResponse {
   error?: string;
 }
 
+export interface ToggleAlertResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  is_active?: boolean;
+}
+
 export const deleteAlertById = async (
   userId: string,
   alertId: string
@@ -352,43 +358,18 @@ export const deleteAlertById = async (
   }
 };
 
-export interface ToggleAlertResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  alert?: AlertItem;
-}
-
-export interface UpdateAlertRequest {
-  user_id: string;
-  main_category: string;
-  sub_categories?: string[];
-  followup_questions?: FollowUpQuestion[];
-  custom_question?: string;
-}
-
-export interface UpdateAlertResponse {
-  success: boolean;
-  message?: string;
-  error?: string;
-  alert?: AlertItem;
-}
-
 export const toggleAlertById = async (
   userId: string,
   alertId: string,
   currentIsActive: boolean
 ): Promise<ToggleAlertResponse> => {
-  const action = currentIsActive ? "pause" : "activate";
-  console.log(`🌐 API Service - ${action.toUpperCase()} Alert called`);
+  console.log("🌐 API Service - Toggle Alert called");
   console.log("🧑 User ID:", userId);
   console.log("⏯️ Alert ID:", alertId);
-  console.log("📊 Current is_active:", currentIsActive);
+  console.log("⏯️ Current state:", currentIsActive ? "active" : "paused");
 
   try {
-    // Use different endpoint based on current state
-    const endpoint = currentIsActive ? "pause" : "activate";
-    const url = `${API_BASE_URL}/alerts/${userId}/${alertId}/${endpoint}`;
+    const url = `${API_BASE_URL}/alerts/alerts/${userId}/${alertId}`;
     console.log("🔗 Full request URL:", url);
 
     const authToken = localStorage.getItem("authToken");
@@ -401,62 +382,11 @@ export const toggleAlertById = async (
       console.log("🔑 Adding auth token to headers");
     }
 
-    const response = await fetch(url, { method: "PUT", headers });
-
-    console.log("📡 Response status:", response.status);
-    const result = await response.json();
-    console.log("📄 Response body:", result);
-
-    if (!response.ok) {
-      console.warn("⚠️ Response not OK");
-      return {
-        success: false,
-        error: result.message || result.error || `Failed to ${action} alert`,
-      };
-    }
-
-    return {
-      success: true,
-      message: result.message || `Alert ${action}d successfully`,
-      alert: result.alert,
-    };
-  } catch (error) {
-    console.error(`❌ Error ${action}ing alert:`, error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    };
-  }
-};
-
-export const updateAlertById = async (
-  userId: string,
-  alertId: string,
-  data: UpdateAlertRequest
-): Promise<UpdateAlertResponse> => {
-  console.log("🌐 API Service - Update Alert called");
-  console.log("🧑 User ID:", userId);
-  console.log("📝 Alert ID:", alertId);
-  console.log("📦 Update data:", data);
-
-  try {
-    const url = `${API_BASE_URL}/alerts/${userId}/${alertId}`;
-    console.log("🔗 Full request URL:", url);
-
-    const authToken = localStorage.getItem("authToken");
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
-      console.log("🔑 Adding auth token to headers");
-    }
-
+    const desiredState = !currentIsActive;
     const response = await fetch(url, {
-      method: "PUT",
+      method: "PATCH",
       headers,
-      body: JSON.stringify(data),
+      body: JSON.stringify({ is_active: desiredState }),
     });
 
     console.log("📡 Response status:", response.status);
@@ -467,17 +397,22 @@ export const updateAlertById = async (
       console.warn("⚠️ Response not OK");
       return {
         success: false,
-        error: result.message || result.error || "Failed to update alert",
+        error:
+          result.message ||
+          result.error ||
+          `Failed to ${desiredState ? "activate" : "pause"} alert`,
       };
     }
 
     return {
       success: true,
-      message: result.message || "Alert updated successfully",
-      alert: result.alert || result.data,
+      is_active: result.is_active ?? desiredState,
+      message:
+        result.message ||
+        `Alert ${desiredState ? "activated" : "paused"} successfully`,
     };
   } catch (error) {
-    console.error("❌ Error updating alert:", error);
+    console.error("❌ Error toggling alert:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",
@@ -491,5 +426,4 @@ export default {
   getAlertsByUserId,
   deleteAlertById,
   toggleAlertById,
-  updateAlertById,
 };
