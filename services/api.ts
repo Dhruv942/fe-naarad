@@ -318,7 +318,7 @@ export const deleteAlertById = async (
   console.log("🗑️ Alert ID:", alertId);
 
   try {
-    const url = `${API_BASE_URL}/alerts/alerts/${userId}/${alertId}`;
+    const url = `${API_BASE_URL}/alerts/${userId}/${alertId}`;
     console.log("🔗 Full request URL:", url);
 
     const authToken = localStorage.getItem("authToken");
@@ -369,7 +369,7 @@ export const toggleAlertById = async (
   console.log("⏯️ Current state:", currentIsActive ? "active" : "paused");
 
   try {
-    const url = `${API_BASE_URL}/alerts/alerts/${userId}/${alertId}`;
+    const url = `${API_BASE_URL}/alerts/${userId}/${alertId}`;
     console.log("🔗 Full request URL:", url);
 
     const authToken = localStorage.getItem("authToken");
