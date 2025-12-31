@@ -408,7 +408,7 @@ const DashboardPage: React.FC = () => {
       console.log('Initializing WebSocket connection...');
       
       // Create socket connection with reconnection enabled
-      socketRef.current = io('http://localhost:3000', {
+      socketRef.current = io('https://naaradupdates.info', {
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
