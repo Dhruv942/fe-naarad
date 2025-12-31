@@ -36,6 +36,7 @@ export interface AlertItem {
   user_id: string;
   frequency?: string;
   customFrequencyTime?: string;
+  is_active: boolean;
   // Add more fields if your API sends them
 }
 

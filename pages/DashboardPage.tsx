@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { usePreferences } from "../contexts/PreferencesContext";
 import { useNavigate } from "react-router-dom";
+import { io } from 'socket.io-client';
 import Button from "../components/common/Button";
 import SectionCard from "../components/common/SectionCard";
 import { ICONS, PagePath, INTEREST_TAG_HIERARCHY } from "../constants";
+import { showNotification } from "../utils/notifications";
 import {
   getAlertsByUserId,
   deleteAlertById,
@@ -85,7 +87,8 @@ const findQuestionIdByText = (
 const DashboardPage: React.FC = () => {
   const { user, logout, startNewAlert, setActiveAlert } = usePreferences();
   const navigate = useNavigate();
-  const [apiAlerts, setApiAlerts] = useState<any[]>([]);
+  const [apiAlerts, setApiAlerts] = useState<AlertItem[]>([]);
+  const socketRef = useRef<ReturnType<typeof io> | null>(null);
   const [isLoadingAlerts, setIsLoadingAlerts] = useState(true);
   const [alertsError, setAlertsError] = useState<string | null>(null);
 
@@ -148,7 +151,7 @@ const DashboardPage: React.FC = () => {
     }
 
     if (!userId) {
-      alert("User ID not found. Please login again.");
+      showNotification("User ID not found. Please login again.");
       return;
     }
 
@@ -162,11 +165,11 @@ const DashboardPage: React.FC = () => {
         setApiAlerts(apiAlerts.filter((alert) => alert.alert_id !== alertId));
       } else {
         console.error("❌ Failed to delete alert:", response.error);
-        alert(response.error || "Failed to delete alert");
+        showNotification(response.error || "Failed to delete alert");
       }
     } catch (error) {
       console.error("❌ Error deleting alert:", error);
-      alert(error instanceof Error ? error.message : "An error occurred");
+      showNotification(error instanceof Error ? error.message : "An error occurred");
     }
   };
 
@@ -183,7 +186,7 @@ const DashboardPage: React.FC = () => {
     }
 
     if (!userId) {
-      alert("User ID not found. Please login again.");
+      showNotification("User ID not found. Please login again.");
       return;
     }
 
@@ -210,11 +213,11 @@ const DashboardPage: React.FC = () => {
         );
       } else {
         console.error(`❌ Failed to ${action} alert:`, response.error);
-        alert(response.error || `Failed to ${action} alert`);
+        showNotification(response.error || `Failed to ${action} alert`);
       }
     } catch (error) {
       console.error("❌ Error toggling alert:", error);
-      alert(error instanceof Error ? error.message : "An error occurred");
+      showNotification(error instanceof Error ? error.message : "An error occurred");
     }
   };
 
@@ -387,6 +390,79 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchAlerts();
+
+    // Check notification permission on page load
+    if ('Notification' in window) {
+      console.log('Notification permission is:', Notification.permission);
+      
+      // Request permission if not already granted
+      if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          console.log('Notification permission:', permission);
+        });
+      }
+    }
+
+    // Only create socket if it doesn't exist
+    if (!socketRef.current) {
+      console.log('Initializing WebSocket connection...');
+      
+      // Create socket connection with reconnection enabled
+      socketRef.current = io('http://localhost:3000', {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+
+      socketRef.current.on('connect', () => {
+        console.log('🔌 WebSocket connected:', socketRef.current?.id);
+      });
+
+      socketRef.current.on('connect_error', (error) => {
+        console.error('WebSocket connection error:', error);
+      });
+
+      socketRef.current.on('new-notification', (data) => {
+        console.log('📢 New notification received:', data);
+        
+        // Log the entire data object to see its structure
+        console.log('Full notification data:', JSON.stringify(data, null, 2));
+        
+        // Try to extract the article data if it exists
+        const notificationData = data.article || data;
+        
+        showNotification(notificationData.title || 'New Notification', {
+          body: notificationData.description || '',
+          icon: notificationData.image_url || notificationData.imageUrl,
+        });
+      });
+
+      socketRef.current.on('disconnect', (reason) => {
+        console.log('🔌 WebSocket disconnected:', reason);
+        
+        // Attempt to reconnect if not explicitly disconnected
+        if (reason === 'io server disconnect' || reason === 'io client disconnect') {
+          console.log('Attempting to reconnect...');
+          setTimeout(() => {
+            if (socketRef.current) {
+              socketRef.current.connect();
+            }
+          }, 1000);
+        }
+      });
+    }
+
+    // Cleanup on component unmount
+    return () => {
+      if (socketRef.current) {
+        console.log('Cleaning up WebSocket connection');
+        socketRef.current.off('connect');
+        socketRef.current.off('new-notification');
+        socketRef.current.off('disconnect');
+        socketRef.current.close();
+        socketRef.current = null;
+      }
+    };
   }, []);
 
   return (
@@ -414,7 +490,15 @@ const DashboardPage: React.FC = () => {
           </div>
         </header>
 
-        <div className="mb-6 sm:mb-8 flex justify-stretch sm:justify-end">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row justify-stretch sm:justify-end gap-4">
+          {/* <Button
+            onClick={() => showNotification('Test Title', { body: 'This is a test notification!', icon: 'https://cdn-icons-png.flaticon.com/512/124/124021.png' })}
+            variant="secondary"
+            size="lg"
+            className="w-full sm:w-auto"
+          >
+            Test Notification
+          </Button> */}
           <Button
             onClick={startNewAlert}
             variant="primary"

@@ -93,11 +93,7 @@ const InterestSelectionPage: React.FC = () => {
 
   const handleMainCategorySelect = (category: MainCategory) => {
     // Prevent selection if category is coming soon or not ready
-    if (
-      category.id === "youtube" ||
-      category.id === "custom" ||
-      category.id === "moviesTV"
-    ) {
+    if (category.id === "custom") {
       return;
     }
 
@@ -701,10 +697,7 @@ const InterestSelectionPage: React.FC = () => {
               />
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {mainCategoriesArray.map((category) => {
-                  const isDisabled =
-                    category.id === "youtube" ||
-                    category.id === "custom" ||
-                    category.id === "moviesTV";
+                  const isDisabled = category.id === "custom";
                   return (
                     <button
                       key={category.id}
